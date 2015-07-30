@@ -19,13 +19,28 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Maintains a list of connected clients. Passes messages between users.
+ * <p>
+ * Handles following messages:
+ * <ul>
+ * <li>{@link ConnectionRequest} - registers a new user. Doesn't reply.</li>
+ * <li>{@link ListUsersRequest} - replies to with {@link UserListMessage},
+ * containing the list of currently connected users.</li>
+ * <li>{@link DisconnectRequest} - unregisters a user. Doesn't reply.</li>
+ * </ul>
+ */
 public final class InteractorManager extends MessageListener {
 
     private final static Logger log = Logger.getLogger(InteractorManager.class.getName());
     private static final int CONNECTION_FAILURE_TIMEOUT = 1000;
 
     private Map<String, ClientInteractor> clients = new HashMap<>();
-    private ExecutorService executor = Executors.newCachedThreadPool();
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    public InteractorManager() {
+        startMessageQueue();
+    }
 
     @Override
     protected void handleMessage(Object message) {
@@ -67,7 +82,6 @@ public final class InteractorManager extends MessageListener {
     private void connectUser(String username, Socket client) {
         try {
             ClientInteractor clientInteractor = new ClientInteractor(username, client, this);
-            clientInteractor.startMessageQueue();
             clientInteractor.sendMessage(new ConnectionResultMessage(true));
             clients.put(username, clientInteractor);
         } catch (IOException e) {

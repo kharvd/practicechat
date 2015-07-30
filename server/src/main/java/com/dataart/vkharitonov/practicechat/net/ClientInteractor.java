@@ -19,16 +19,34 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
+/**
+ * Interacts with the clients.
+ * <p>
+ * Handles following messages:
+ * <ul>
+ * <li>{@link ConnectionResultMessage} - sends an acknowledgement to the newly connected user</li>
+ * <li>{@link ListUsersRequest} - asks the interaction manager to return a user list</li>
+ * <li>{@link UserListMessage} - sends the received user list to the user</li>
+ * <li>{@link DisconnectRequest} - disconnects current user and shuts down</li>
+ * </ul>
+ */
 public final class ClientInteractor extends MessageListener {
 
     private final static Logger log = Logger.getLogger(ClientInteractor.class.getName());
-    private final PrintWriter writer;
+
+    private PrintWriter writer;
     private String username;
     private Socket clientSocket;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private InteractorManager interactorManager;
     private volatile boolean isReadRunning;
 
+    /**
+     * @param username username associated with the client
+     * @param clientSocket client's socket
+     * @param interactorManager manager
+     * @throws IOException thrown if couldn't get output stream from a socket
+     */
     public ClientInteractor(String username, Socket clientSocket, InteractorManager interactorManager) throws IOException {
         super();
         this.username = username;
@@ -37,6 +55,7 @@ public final class ClientInteractor extends MessageListener {
 
         writer = new PrintWriter(clientSocket.getOutputStream(), true);
 
+        startMessageQueue();
         isReadRunning = true;
         new SocketReadThread().start();
     }
@@ -58,6 +77,7 @@ public final class ClientInteractor extends MessageListener {
         isReadRunning = false;
         closeConnection();
         stopMessageQueue();
+        executor.shutdown();
         interactorManager.handleMessage(message);
     }
 

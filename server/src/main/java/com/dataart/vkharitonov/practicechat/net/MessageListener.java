@@ -3,6 +3,9 @@ package com.dataart.vkharitonov.practicechat.net;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * Maintains a message queue which is processed on a separate thread
+ */
 public abstract class MessageListener {
 
     private BlockingQueue<Object> messageQueue = new LinkedBlockingQueue<>();
@@ -17,10 +20,19 @@ public abstract class MessageListener {
         isRunning = false;
     }
 
+    /**
+     * Adds a message to a message queue. The message will be processed asynchronously.
+     *
+     * @param message a message
+     */
     public void sendMessage(Object message) {
         messageQueue.add(message);
     }
 
+    /**
+     * Handle next message from a queue
+     * @param message a message
+     */
     protected abstract void handleMessage(Object message);
 
     private class WorkerThread extends Thread {

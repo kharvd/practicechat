@@ -4,6 +4,9 @@ import com.dataart.vkharitonov.practicechat.json.ConnectMessage;
 
 import java.net.Socket;
 
+/**
+ * A request to register a new user
+ */
 public class ConnectionRequest {
 
     private ConnectMessage connectMessage;

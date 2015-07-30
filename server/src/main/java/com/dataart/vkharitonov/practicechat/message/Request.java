@@ -1,5 +1,8 @@
 package com.dataart.vkharitonov.practicechat.message;
 
+/**
+ * Request made by a specific user
+ */
 public class Request {
     private String username;
 

@@ -20,7 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Accepts connection requests from clients and redirects them to the listener.
+ * Accepts connection requests from clients and redirects them to the message listener.
  */
 public class ConnectionManager {
 
@@ -36,7 +36,7 @@ public class ConnectionManager {
      * Starts listening to incoming client connections.
      *
      * @param port               the port number
-     * @param connectionListener handles each connection request
+     * @param connectionListener must handle {@link ConnectionRequest} messages
      * @throws IOException thrown if couldn't create server socket
      */
     public void start(int port, @NotNull MessageListener connectionListener) throws IOException {

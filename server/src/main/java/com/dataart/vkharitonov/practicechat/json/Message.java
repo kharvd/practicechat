@@ -30,6 +30,8 @@ public class Message {
     }
 
     public enum MessageType {
+        // Incoming messages
+
         @SerializedName("connect")
         CONNECT,
 
@@ -39,6 +41,8 @@ public class Message {
         @SerializedName("list_users")
         LIST_USERS,
 
+
+        // Outgoing messages
 
         @SerializedName("connection_result")
         CONNECTION_RESULT,
