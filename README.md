@@ -9,6 +9,7 @@ Every message is a JSON object that contains two fields:
 * payload -- a JSON object which is specific to the message type
 
 ### Client-to-Server messages
+
 #### connect
 Tries to connect the client to the server. Must be called within 1 second after socket connection.
 
@@ -41,6 +42,7 @@ Ask the server to return the list of all currently connected users.
 Payload must be `null`.
 
 ### Server-to-Client messages
+
 #### connection_result
 Sent by the server upon client's connect request. If the user with 
 the specified name is already connected, returns `"success": false`, otherwise returns `true`.
