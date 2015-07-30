@@ -4,12 +4,13 @@ Simplistic chat written in Java
 Chat uses JSON-based protocol for client-server communication. 
 
 Every message is a JSON object that contains two fields:
+
 * message_type -- a string that determines the type of the message
 * payload -- a JSON object which is specific to the message type
 
 ### Client-to-Server messages
 #### connect
-Tries to connect the client to the server.
+Tries to connect the client to the server. Must be called within 1 second after socket connection.
 
 Payload example:
 
