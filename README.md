@@ -13,31 +13,31 @@ Tries to connect the client to the server.
 
 Payload example:
 
-	{
-		"username": "john_doe1952"
-	}
+        {
+            "username": "john_doe1952"
+        }
 
 The server must answer with `connection_result` message
 
 ==== disconnect ====
 Disconnects currently connected user from the server. 
 
-Payload is an empty object.
+Payload must be `null`.
 
 ==== send_message ====
 Sends a message to a specified user.
 
 Payload example:
 
-	{
-		"user": "NAGibaTOR_40k",
-		"message": "sup m8"
-	}
+        {
+            "user": "NAGibaTOR_40k",
+            "message": "sup m8"
+        }
 
 ==== list_users ====
 Ask the server to return the list of all currently connected users.
 
-Payload is an empty object.
+Payload must be `null`.
 
 === Server-to-Client messages ===
 ==== connection_result ====
@@ -45,19 +45,19 @@ Sent by the server upon client's connect request. If the user with
 the specified name is already connected, returns `"success": false`, otherwise returns `true`.
 
 Payload example:
-	
-	{
-		"success": true
-	}
+    
+        {
+            "success": true
+        }
 
 ==== user_list ====
 Sent by the server as a response to `list_users` command.
 
 Payload example:
 
-	{
-		"users": ["john_doe1952", "NAGibaTOR_40k"]
-	}
+        {
+            "users": ["john_doe1952", "NAGibaTOR_40k"]
+        }
 
 ==== message_sent ====
 Sent by the server upon the client's attempt to send a message to some user. Contains information 
@@ -66,21 +66,21 @@ as soon as the user goes online.
 
 Payload example:
 
-	{
-		"user": "NAGibaTOR_40k",
-		"online": true
-	}
+        {
+            "user": "NAGibaTOR_40k",
+            "online": true
+        }
 
 ==== new_message ====
 Sent by the server when some user sends a message to the current user. Timestamp is in milliseconds.
 
 Payload example:
 
-	{
-		"user": "NAGibaTOR_40k",
-		"online": true,
-		"message": "sup m8",
-		"timestamp": 1438182184000
-	}
+        {
+            "user": "NAGibaTOR_40k",
+            "online": true,
+            "message": "sup m8",
+            "timestamp": 1438182184000
+        }
 
 
