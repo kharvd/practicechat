@@ -21,11 +21,29 @@ public class Message {
         return payload;
     }
 
+    @Override
+    public String toString() {
+        return "Message{" +
+                "messageType=" + messageType +
+                ", payload=" + payload +
+                '}';
+    }
+
     public enum MessageType {
         @SerializedName("connect")
         CONNECT,
 
+        @SerializedName("disconnect")
+        DISCONNECT,
+
+        @SerializedName("list_users")
+        LIST_USERS,
+
+
         @SerializedName("connection_result")
-        CONNECTION_RESULT
+        CONNECTION_RESULT,
+
+        @SerializedName("user_list")
+        USER_LIST
     }
 }

@@ -48,7 +48,7 @@ Sent by the server upon client's connect request. If the user with
 the specified name is already connected, returns `"success": false`, otherwise returns `true`.
 
 Payload example:
-    
+
         {
             "success": true
         }

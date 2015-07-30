@@ -90,7 +90,7 @@ public class ConnectionManager {
 
                 if (message.getMessageType() == Message.MessageType.CONNECT) {
                     ConnectMessage connectMessage = JsonUtils.GSON.fromJson(message.getPayload(), ConnectMessage.class);
-                    connectionListener.onMessage(new ConnectionRequest(connectMessage, client));
+                    connectionListener.sendMessage(new ConnectionRequest(connectMessage, client));
                 } else {
                     throw new JsonSyntaxException("First message should be `connect`");
                 }
