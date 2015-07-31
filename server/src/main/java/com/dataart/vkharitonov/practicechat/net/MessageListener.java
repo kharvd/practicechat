@@ -2,22 +2,33 @@ package com.dataart.vkharitonov.practicechat.net;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Maintains a message queue which is processed on a separate thread
  */
 public abstract class MessageListener {
 
+    private final static Logger log = Logger.getLogger(MessageListener.class.getName());
+
     private BlockingQueue<Object> messageQueue = new LinkedBlockingQueue<>();
     private volatile boolean isRunning;
+    private WorkerThread workerThread;
 
     public void startMessageQueue() {
         isRunning = true;
-        new WorkerThread().start();
+        workerThread = new WorkerThread();
+        workerThread.start();
     }
 
     public void stopMessageQueue() {
         isRunning = false;
+        workerThread.interrupt();
+    }
+
+    public boolean isMessageQueueRunning() {
+        return isRunning;
     }
 
     /**
@@ -44,7 +55,11 @@ public abstract class MessageListener {
                     Object message = messageQueue.take();
                     handleMessage(message);
                 } catch (InterruptedException e) {
-                    yield();
+                    log.warning("WorkerThread in " + MessageListener.this + " was interrupted. Shutting down the queue");
+                    isRunning = false;
+                } catch (Exception e) {
+                    log.log(Level.SEVERE, e, () -> "Exception during message handling in " + MessageListener.this + ". Shutting down the server");
+                    System.exit(1);
                 }
             }
         }

@@ -4,14 +4,23 @@ import com.dataart.vkharitonov.practicechat.net.ConnectionManager;
 import com.dataart.vkharitonov.practicechat.net.InteractorManager;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Main {
 
-    public static void main(String[] args) throws IOException {
+    private final static Logger log = Logger.getLogger(Main.class.getName());
+
+    public static void main(String[] args) {
         ConnectionManager connectionManager = new ConnectionManager();
         InteractorManager interactorManager = new InteractorManager();
 
-        connectionManager.start(1234, interactorManager);
+        try {
+            connectionManager.start(1234, interactorManager);
+        } catch (IOException e) {
+            log.log(Level.SEVERE, e, () -> "Couldn't start the server");
+            interactorManager.stopMessageQueue();
+        }
     }
 
 }

@@ -41,6 +41,8 @@ public class Message {
         @SerializedName("list_users")
         LIST_USERS,
 
+        @SerializedName("send_message")
+        SEND_MESSAGE,
 
         // Outgoing messages
 
@@ -48,6 +50,12 @@ public class Message {
         CONNECTION_RESULT,
 
         @SerializedName("user_list")
-        USER_LIST
+        USER_LIST,
+
+        @SerializedName("new_message")
+        NEW_MESSAGE,
+
+        @SerializedName("message_sent")
+        MESSAGE_SENT
     }
 }

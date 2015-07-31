@@ -1,10 +1,10 @@
 package com.dataart.vkharitonov.practicechat.net;
 
-import com.dataart.vkharitonov.practicechat.json.ConnectionResultMessage;
-import com.dataart.vkharitonov.practicechat.json.Message;
-import com.dataart.vkharitonov.practicechat.json.UserListMessage;
+import com.dataart.vkharitonov.practicechat.json.*;
 import com.dataart.vkharitonov.practicechat.message.DisconnectRequest;
 import com.dataart.vkharitonov.practicechat.message.ListUsersRequest;
+import com.dataart.vkharitonov.practicechat.message.MessageSentRequest;
+import com.dataart.vkharitonov.practicechat.message.SendMessageRequest;
 import com.dataart.vkharitonov.practicechat.util.JsonUtils;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -25,9 +26,15 @@ import java.util.logging.Logger;
  * Handles following messages:
  * <ul>
  * <li>{@link ConnectionResultMessage} - sends an acknowledgement to the newly connected user</li>
- * <li>{@link ListUsersRequest} - asks the interaction manager to return a user list</li>
  * <li>{@link UserListMessage} - sends the received user list to the user</li>
- * <li>{@link DisconnectRequest} - disconnects current user and shuts down</li>
+ * <li>{@link NewMessage} - sends a message to the current user</li>
+ * <li>{@link MessageSent} - sends "message sent" acknowledgement to the current user</li>
+ *
+ * <li>{@link ListUsersRequest} - asks the interaction manager to return a user list</li>
+ * <li>{@link SendMessageRequest} - asks the interaction manager to send a message to some user.
+ * Must reply with {@link MessageSentRequest} as soon as the message is sent</li>
+ * <li>{@link MessageSentRequest} - asks the interaction manager to send a "message sent" ack to some user</li>
+ * <li>{@link DisconnectRequest} - disconnects current user, notifies the interaction manager and shuts down</li>
  * </ul>
  */
 public final class ClientInteractor extends MessageListener {
@@ -63,14 +70,31 @@ public final class ClientInteractor extends MessageListener {
     @Override
     protected void handleMessage(Object message) {
         if (message instanceof ConnectionResultMessage) {
-            replyConnectionResultMessage((ConnectionResultMessage) message);
-        } else if (message instanceof ListUsersRequest) {
-            handleListUsersRequest(message);
+            sendMessageToClient(Message.MessageType.CONNECTION_RESULT, message);
         } else if (message instanceof UserListMessage) {
-            replyUserListMessage((UserListMessage) message);
+            sendMessageToClient(Message.MessageType.USER_LIST, message);
+        } else if (message instanceof NewMessage) {
+            sendNewMessage((NewMessage) message);
+        } else if (message instanceof MessageSent) {
+            sendMessageToClient(Message.MessageType.MESSAGE_SENT, message);
+        } else if (message instanceof ListUsersRequest ||
+                message instanceof SendMessageRequest ||
+                message instanceof MessageSentRequest) {
+            sendToManager(message);
         } else if (message instanceof DisconnectRequest) {
             handleDisconnectRequest(message);
         }
+    }
+
+    private <T> CompletableFuture<Void> sendMessageToClient(Message.MessageType type, T payload) {
+        Message message = new Message(type, JsonUtils.GSON.toJsonTree(payload));
+        String json = JsonUtils.GSON.toJson(message);
+        return CompletableFuture.runAsync(() -> writeToClient(json), executor);
+    }
+
+    private void sendNewMessage(NewMessage message) {
+        CompletableFuture<Void> future = sendMessageToClient(Message.MessageType.NEW_MESSAGE, message);
+        future.thenRun(() -> sendMessage(new MessageSentRequest(username, message.getUsername())));
     }
 
     private void handleDisconnectRequest(Object message) {
@@ -81,20 +105,8 @@ public final class ClientInteractor extends MessageListener {
         interactorManager.handleMessage(message);
     }
 
-    private void replyUserListMessage(UserListMessage message) {
-        Message resultMessage = new Message(Message.MessageType.USER_LIST, JsonUtils.GSON.toJsonTree(message));
-        String json = JsonUtils.GSON.toJson(resultMessage);
-        executor.submit(() -> writeToClient(json));
-    }
-
-    private void handleListUsersRequest(Object message) {
+    private void sendToManager(Object message) {
         interactorManager.sendMessage(message);
-    }
-
-    private void replyConnectionResultMessage(ConnectionResultMessage message) {
-        Message resultMessage = new Message(Message.MessageType.CONNECTION_RESULT, JsonUtils.GSON.toJsonTree(message));
-        String json = JsonUtils.GSON.toJson(resultMessage);
-        executor.submit(() -> writeToClient(json));
     }
 
     private void closeConnection() {
@@ -142,6 +154,9 @@ public final class ClientInteractor extends MessageListener {
                     case DISCONNECT:
                         disconnectRequest();
                         break;
+                    case SEND_MESSAGE:
+                        SendMessage msg = JsonUtils.GSON.fromJson(message.getPayload(), SendMessage.class);
+                        sendMessage(new SendMessageRequest(username, msg));
                     default:
                         break;
                 }
@@ -149,6 +164,7 @@ public final class ClientInteractor extends MessageListener {
         }
 
         private void disconnectRequest() {
+            isReadRunning = false;
             sendMessage(new DisconnectRequest(username));
         }
     }

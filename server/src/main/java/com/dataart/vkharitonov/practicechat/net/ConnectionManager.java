@@ -40,12 +40,12 @@ public class ConnectionManager {
      * @throws IOException thrown if couldn't create server socket
      */
     public void start(int port, @NotNull MessageListener connectionListener) throws IOException {
-        executor = Executors.newFixedThreadPool(MAX_CONNECTION_POOL);
         server = new ServerSocket(port);
 
         this.connectionListener = connectionListener;
 
         isRunning = true;
+        executor = Executors.newFixedThreadPool(MAX_CONNECTION_POOL);
         WorkerThread workerThread = new WorkerThread();
         workerThread.start();
     }
@@ -65,6 +65,10 @@ public class ConnectionManager {
             log.log(Level.WARNING, e, () -> "Couldn't close server socket");
         }
         executor.shutdown();
+    }
+
+    public boolean isRunning() {
+        return isRunning;
     }
 
     private class WorkerThread extends Thread {

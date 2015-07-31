@@ -32,7 +32,7 @@ Sends a message to a specified user.
 Payload example:
 
         {
-            "user": "NAGibaTOR_40k",
+            "username": "NAGibaTOR_40k",
             "message": "sup m8"
         }
 
@@ -70,7 +70,7 @@ as soon as the user goes online.
 Payload example:
 
         {
-            "user": "NAGibaTOR_40k",
+            "username": "NAGibaTOR_40k",
             "online": true
         }
 
@@ -80,7 +80,7 @@ Sent by the server when some user sends a message to the current user. Timestamp
 Payload example:
 
         {
-            "user": "NAGibaTOR_40k",
+            "username": "NAGibaTOR_40k",
             "online": true,
             "message": "sup m8",
             "timestamp": 1438182184000

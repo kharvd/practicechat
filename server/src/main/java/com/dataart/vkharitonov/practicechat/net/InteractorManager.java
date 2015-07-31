@@ -1,11 +1,7 @@
 package com.dataart.vkharitonov.practicechat.net;
 
-import com.dataart.vkharitonov.practicechat.json.ConnectionResultMessage;
-import com.dataart.vkharitonov.practicechat.json.Message;
-import com.dataart.vkharitonov.practicechat.json.UserListMessage;
-import com.dataart.vkharitonov.practicechat.message.ConnectionRequest;
-import com.dataart.vkharitonov.practicechat.message.DisconnectRequest;
-import com.dataart.vkharitonov.practicechat.message.ListUsersRequest;
+import com.dataart.vkharitonov.practicechat.json.*;
+import com.dataart.vkharitonov.practicechat.message.*;
 import com.dataart.vkharitonov.practicechat.util.JsonUtils;
 import com.google.gson.JsonElement;
 
@@ -27,7 +23,9 @@ import java.util.logging.Logger;
  * <li>{@link ConnectionRequest} - registers a new user. Doesn't reply.</li>
  * <li>{@link ListUsersRequest} - replies to with {@link UserListMessage},
  * containing the list of currently connected users.</li>
- * <li>{@link DisconnectRequest} - unregisters a user. Doesn't reply.</li>
+ * <li>{@link SendMessageRequest} - sends a message to the user</li>
+ * <li>{@link MessageSentRequest} - sends a "message sent" acknowledgement to the user</li>
+ * <li>{@link DisconnectRequest} - unregisters a user. Doesn't reply</li>
  * </ul>
  */
 public final class InteractorManager extends MessageListener {
@@ -36,10 +34,17 @@ public final class InteractorManager extends MessageListener {
     private static final int CONNECTION_FAILURE_TIMEOUT = 1000;
 
     private Map<String, ClientInteractor> clients = new HashMap<>();
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private ExecutorService executor;
 
     public InteractorManager() {
         startMessageQueue();
+        executor = Executors.newSingleThreadExecutor();
+    }
+
+    @Override
+    public void stopMessageQueue() {
+        super.stopMessageQueue();
+        executor.shutdown();
     }
 
     @Override
@@ -48,17 +53,54 @@ public final class InteractorManager extends MessageListener {
             handleConnectionRequest((ConnectionRequest) message);
         } else if (message instanceof ListUsersRequest) {
             handleListUsersRequest((ListUsersRequest) message);
+        } else if (message instanceof SendMessageRequest) {
+            handleSendMessageRequest((SendMessageRequest) message);
+        } else if (message instanceof MessageSentRequest) {
+            handleMessageSentRequest((MessageSentRequest) message);
         } else if (message instanceof DisconnectRequest) {
             handleDisconnectRequest((DisconnectRequest) message);
         }
     }
 
+    private void handleMessageSentRequest(MessageSentRequest message) {
+        String messageSender = message.getMessageSender();
+        if (clients.containsKey(messageSender)) {
+            ClientInteractor senderClient = clients.get(messageSender);
+            senderClient.sendMessage(new MessageSent(message.getSender(), true));
+        }
+    }
+
+    private void handleSendMessageRequest(SendMessageRequest message) {
+        SendMessage sendMessage = message.getMessage();
+        if (sendMessage == null) {
+            log.warning("Null message from user " + message.getSender());
+            return;
+        }
+
+        String destination = sendMessage.getUsername();
+        String sender = message.getSender();
+
+        if (destination == null) {
+            log.warning("Destination user can't be null in message sent by " + sender);
+            return;
+        }
+
+        if (clients.containsKey(destination)) {
+            ClientInteractor destinationClient = clients.get(destination);
+            destinationClient.sendMessage(new NewMessage(sender, sendMessage.getMessage(), true));
+        } else {
+            ClientInteractor senderClient = clients.get(sender);
+            senderClient.sendMessage(new MessageSent(destination, false));
+        }
+    }
+
     private void handleDisconnectRequest(DisconnectRequest message) {
-        clients.remove(message.getUsername());
+        clients.remove(message.getSender());
+        log.info("User " + message.getSender() + " has disconnected");
     }
 
     private void handleListUsersRequest(ListUsersRequest message) {
-        ClientInteractor clientInteractor = clients.get(message.getUsername());
+        ClientInteractor clientInteractor = clients.get(message.getSender());
         if (clientInteractor != null) {
             clientInteractor.sendMessage(new UserListMessage(clients.keySet()));
         }
@@ -84,6 +126,7 @@ public final class InteractorManager extends MessageListener {
             ClientInteractor clientInteractor = new ClientInteractor(username, client, this);
             clientInteractor.sendMessage(new ConnectionResultMessage(true));
             clients.put(username, clientInteractor);
+            log.info("User " + username + " has connected");
         } catch (IOException e) {
             log.warning("Could not read from client " + client.getInetAddress());
             if (!client.isClosed()) {

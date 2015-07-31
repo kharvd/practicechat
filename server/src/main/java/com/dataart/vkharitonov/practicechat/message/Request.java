@@ -4,13 +4,13 @@ package com.dataart.vkharitonov.practicechat.message;
  * Request made by a specific user
  */
 public class Request {
-    private String username;
+    private String sender;
 
-    public Request(String username) {
-        this.username = username;
+    public Request(String sender) {
+        this.sender = sender;
     }
 
-    public String getUsername() {
-        return username;
+    public String getSender() {
+        return sender;
     }
 }
