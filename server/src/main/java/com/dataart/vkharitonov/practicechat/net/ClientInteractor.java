@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  * <li>{@link UserListOutMessage} - sends the received user list to the user</li>
  * <li>{@link NewMsgOutMessage} - sends a message to the current user</li>
  * <li>{@link MsgSentOutMessage} - sends "message sent" acknowledgement to the current user</li>
- *
+ * <p>
  * <li>{@link ListUsersRequest} - asks the interaction manager to return a user list</li>
  * <li>{@link SendMsgRequest} - asks the interaction manager to send a message to some user.
  * Must reply with {@link MsgSentRequest} as soon as the message is sent</li>
@@ -47,8 +47,8 @@ public final class ClientInteractor implements MessageListener {
     private MessageProducer messageProducer;
 
     /**
-     * @param username username associated with the client
-     * @param clientSocket client's socket
+     * @param username          username associated with the client
+     * @param clientSocket      client's socket
      * @param interactorManager manager
      * @throws IOException thrown if couldn't get output stream from a socket
      */
@@ -75,7 +75,11 @@ public final class ClientInteractor implements MessageListener {
 
     private void sendNewMessage(NewMsgOutMessage message) {
         CompletableFuture<Void> future = sendMessageToClient(Message.MessageType.NEW_MESSAGE, message);
-        future.thenRun(() -> messageQueue.post(new MsgSentRequest(username, message.getUsername())));
+        future.thenRun(() -> messageQueue.post(new MsgSentRequest(username, message.getUsername())))
+                .exceptionally(e -> {
+                    log.info("Failed to send message to " + username + ": " + e.getLocalizedMessage());
+                    return null;
+                });
     }
 
     private void handleDisconnectRequest(DisconnectRequest message) {
@@ -101,6 +105,9 @@ public final class ClientInteractor implements MessageListener {
 
     private void writeToClient(String message) {
         writer.println(message);
+        if (writer.checkError()) {
+            throw new RuntimeException(new IOException("Couldn't write to socket for user " + username));
+        }
     }
 
     @Override

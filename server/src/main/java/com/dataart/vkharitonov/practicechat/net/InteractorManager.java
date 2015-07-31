@@ -8,8 +8,10 @@ import com.google.gson.JsonElement;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -39,6 +41,8 @@ public final class InteractorManager implements MessageListener {
 
     private MessageQueue messageQueue;
 
+    private Map<String, Queue<SendMsgRequest>> nonDeliveredMsgs = new HashMap<>();
+
     public InteractorManager() {
         messageQueue = new ManagerMessageQueue();
         messageQueue.start();
@@ -57,9 +61,18 @@ public final class InteractorManager implements MessageListener {
 
     private void handleMessageSentRequest(MsgSentRequest message) {
         String messageSender = message.getMessageSender();
+        String destination = message.getSender();
         if (clients.containsKey(messageSender)) {
             ClientInteractor senderClient = clients.get(messageSender);
-            senderClient.post(new MsgSentOutMessage(message.getSender(), true));
+            senderClient.post(new MsgSentOutMessage(destination, true));
+        }
+
+        if (nonDeliveredMsgs.containsKey(destination)) {
+            Queue<SendMsgRequest> queue = nonDeliveredMsgs.get(destination);
+            queue.remove();
+            if (queue.isEmpty()) {
+                nonDeliveredMsgs.remove(destination);
+            }
         }
     }
 
@@ -80,11 +93,18 @@ public final class InteractorManager implements MessageListener {
 
         if (clients.containsKey(destination)) {
             ClientInteractor destinationClient = clients.get(destination);
-            destinationClient.post(new NewMsgOutMessage(sender, sendMessage.getMessage(), true));
+            destinationClient.post(new NewMsgOutMessage(sender, sendMessage.getMessage(), true, message.getTimestamp()));
         } else {
-            ClientInteractor senderClient = clients.get(sender);
-            senderClient.post(new MsgSentOutMessage(destination, false));
+            enqueueOfflineMessage(destination, message);
         }
+    }
+
+    private void enqueueOfflineMessage(String destination, SendMsgRequest message) {
+        if (!nonDeliveredMsgs.containsKey(destination)) {
+            nonDeliveredMsgs.put(destination, new ArrayDeque<>());
+        }
+
+        nonDeliveredMsgs.get(destination).add(message);
     }
 
     private void handleDisconnectRequest(DisconnectRequest message) {
@@ -119,6 +139,8 @@ public final class InteractorManager implements MessageListener {
             ClientInteractor clientInteractor = new ClientInteractor(username, client, this);
             clientInteractor.post(new ConnectionResultOutMessage(true));
             clients.put(username, clientInteractor);
+
+            sendNonDeliveredMsgs(username);
             log.info("User " + username + " has connected");
         } catch (IOException e) {
             log.warning("Could not read from client " + client.getInetAddress());
@@ -129,6 +151,17 @@ public final class InteractorManager implements MessageListener {
                     log.warning("Could not close socket " + client.getInetAddress());
                 }
             }
+        }
+    }
+
+    private void sendNonDeliveredMsgs(String username) {
+        if (nonDeliveredMsgs.containsKey(username)) {
+            nonDeliveredMsgs.get(username).forEach(sendMsgRequest -> {
+                SendMsgInMessage sendMessage = sendMsgRequest.getMessage();
+                String sender = sendMsgRequest.getSender();
+                clients.get(username).post(new NewMsgOutMessage(sender, sendMessage.getMessage(), clients.containsKey(sender),
+                        sendMsgRequest.getTimestamp()));
+            });
         }
     }
 

@@ -7,11 +7,11 @@ public class NewMsgOutMessage {
     private boolean online;
     private long timestamp;
 
-    public NewMsgOutMessage(String username, String message, boolean online) {
+    public NewMsgOutMessage(String username, String message, boolean online, long timestamp) {
         this.username = username;
         this.message = message;
         this.online = online;
-        timestamp = System.currentTimeMillis();
+        this.timestamp = timestamp;
     }
 
     public String getUsername() {
