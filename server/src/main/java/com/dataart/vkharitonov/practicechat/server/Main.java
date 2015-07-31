@@ -1,8 +1,8 @@
-package com.dataart.vkharitonov.practicechat;
+package com.dataart.vkharitonov.practicechat.server;
 
-import com.dataart.vkharitonov.practicechat.net.ConnectionManager;
-import com.dataart.vkharitonov.practicechat.net.InteractorManager;
-import com.dataart.vkharitonov.practicechat.request.ShutdownRequest;
+import com.dataart.vkharitonov.practicechat.server.net.ConnectionManager;
+import com.dataart.vkharitonov.practicechat.server.net.InteractorManager;
+import com.dataart.vkharitonov.practicechat.server.request.ShutdownRequest;
 
 import java.io.IOException;
 import java.util.logging.Level;

@@ -1,4 +1,4 @@
-package com.dataart.vkharitonov.practicechat.request;
+package com.dataart.vkharitonov.practicechat.server.request;
 
 public class MsgSentRequest extends Request {
 

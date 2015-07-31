@@ -1,6 +1,6 @@
-package com.dataart.vkharitonov.practicechat.request;
+package com.dataart.vkharitonov.practicechat.server.request;
 
-import com.dataart.vkharitonov.practicechat.json.ConnectInMessage;
+import com.dataart.vkharitonov.practicechat.common.json.ConnectInMessage;
 
 import java.net.Socket;
 

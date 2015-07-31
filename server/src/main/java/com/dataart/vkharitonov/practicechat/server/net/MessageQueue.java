@@ -1,4 +1,4 @@
-package com.dataart.vkharitonov.practicechat.net;
+package com.dataart.vkharitonov.practicechat.server.net;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;

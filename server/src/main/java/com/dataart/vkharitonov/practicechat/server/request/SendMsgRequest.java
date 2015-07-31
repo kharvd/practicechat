@@ -1,6 +1,6 @@
-package com.dataart.vkharitonov.practicechat.request;
+package com.dataart.vkharitonov.practicechat.server.request;
 
-import com.dataart.vkharitonov.practicechat.json.SendMsgInMessage;
+import com.dataart.vkharitonov.practicechat.common.json.SendMsgInMessage;
 
 public class SendMsgRequest extends Request {
     private SendMsgInMessage message;

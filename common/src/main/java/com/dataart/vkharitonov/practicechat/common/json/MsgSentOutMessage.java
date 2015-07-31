@@ -1,4 +1,4 @@
-package com.dataart.vkharitonov.practicechat.json;
+package com.dataart.vkharitonov.practicechat.common.json;
 
 public class MsgSentOutMessage {
     private String username;

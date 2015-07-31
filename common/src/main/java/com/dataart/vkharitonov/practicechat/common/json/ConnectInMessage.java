@@ -1,8 +1,12 @@
-package com.dataart.vkharitonov.practicechat.json;
+package com.dataart.vkharitonov.practicechat.common.json;
 
 public class ConnectInMessage {
 
     private String username;
+
+    public ConnectInMessage(String username) {
+        this.username = username;
+    }
 
     public String getUsername() {
         return username;
