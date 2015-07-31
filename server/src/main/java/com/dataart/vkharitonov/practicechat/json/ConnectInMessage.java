@@ -1,23 +1,17 @@
 package com.dataart.vkharitonov.practicechat.json;
 
-public class SendMessage {
+public class ConnectInMessage {
 
     private String username;
-    private String message;
 
     public String getUsername() {
         return username;
     }
 
-    public String getMessage() {
-        return message;
-    }
-
     @Override
     public String toString() {
-        return "SendMessage{" +
+        return "ConnectInMessage{" +
                 "username='" + username + '\'' +
-                ", message='" + message + '\'' +
                 '}';
     }
 }

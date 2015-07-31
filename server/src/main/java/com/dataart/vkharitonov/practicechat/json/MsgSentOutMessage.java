@@ -1,20 +1,19 @@
 package com.dataart.vkharitonov.practicechat.json;
 
-public class NewMessage {
-
+public class MsgSentOutMessage {
     private String username;
-    private String message;
     private boolean online;
-    private long timestamp;
 
-    public NewMessage(String username, String message, boolean online) {
+    public MsgSentOutMessage(String username, boolean online) {
         this.username = username;
-        this.message = message;
         this.online = online;
-        timestamp = System.currentTimeMillis();
     }
 
     public String getUsername() {
         return username;
+    }
+
+    public boolean isOnline() {
+        return online;
     }
 }

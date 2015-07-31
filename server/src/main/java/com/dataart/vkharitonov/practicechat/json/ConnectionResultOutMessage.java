@@ -1,10 +1,10 @@
 package com.dataart.vkharitonov.practicechat.json;
 
-public class ConnectionResultMessage {
+public class ConnectionResultOutMessage {
 
     private boolean success;
 
-    public ConnectionResultMessage(boolean success) {
+    public ConnectionResultOutMessage(boolean success) {
         this.success = success;
     }
 }

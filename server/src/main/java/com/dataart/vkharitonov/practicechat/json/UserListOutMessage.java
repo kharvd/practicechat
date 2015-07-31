@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class UserListMessage {
+public class UserListOutMessage {
     private List<String> users;
 
-    public UserListMessage(Collection<String> users) {
+    public UserListOutMessage(Collection<String> users) {
         this.users = new ArrayList<>(users);
     }
 }

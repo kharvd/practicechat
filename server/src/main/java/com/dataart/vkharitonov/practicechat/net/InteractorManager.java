@@ -1,7 +1,7 @@
 package com.dataart.vkharitonov.practicechat.net;
 
 import com.dataart.vkharitonov.practicechat.json.*;
-import com.dataart.vkharitonov.practicechat.message.*;
+import com.dataart.vkharitonov.practicechat.request.*;
 import com.dataart.vkharitonov.practicechat.util.JsonUtils;
 import com.google.gson.JsonElement;
 
@@ -21,14 +21,15 @@ import java.util.logging.Logger;
  * Handles following messages:
  * <ul>
  * <li>{@link ConnectionRequest} - registers a new user. Doesn't reply.</li>
- * <li>{@link ListUsersRequest} - replies to with {@link UserListMessage},
+ * <li>{@link ListUsersRequest} - replies to with {@link UserListOutMessage},
  * containing the list of currently connected users.</li>
- * <li>{@link SendMessageRequest} - sends a message to the user</li>
- * <li>{@link MessageSentRequest} - sends a "message sent" acknowledgement to the user</li>
+ * <li>{@link SendMsgRequest} - sends a message to the user</li>
+ * <li>{@link MsgSentRequest} - sends a "message sent" acknowledgement to the user</li>
  * <li>{@link DisconnectRequest} - unregisters a user. Doesn't reply</li>
+ * <li>{@link ShutdownRequest} - shuts the manager down</li>
  * </ul>
  */
-public final class InteractorManager extends MessageListener {
+public final class InteractorManager implements MessageListener {
 
     private final static Logger log = Logger.getLogger(InteractorManager.class.getName());
     private static final int CONNECTION_FAILURE_TIMEOUT = 1000;
@@ -36,42 +37,34 @@ public final class InteractorManager extends MessageListener {
     private Map<String, ClientInteractor> clients = new HashMap<>();
     private ExecutorService executor;
 
+    private MessageQueue messageQueue;
+
     public InteractorManager() {
-        startMessageQueue();
+        messageQueue = new ManagerMessageQueue();
+        messageQueue.start();
         executor = Executors.newSingleThreadExecutor();
     }
 
     @Override
-    public void stopMessageQueue() {
-        super.stopMessageQueue();
+    public void post(Object message) {
+        messageQueue.post(message);
+    }
+
+    private void shutdown() {
+        messageQueue.stop();
         executor.shutdown();
     }
 
-    @Override
-    protected void handleMessage(Object message) {
-        if (message instanceof ConnectionRequest) {
-            handleConnectionRequest((ConnectionRequest) message);
-        } else if (message instanceof ListUsersRequest) {
-            handleListUsersRequest((ListUsersRequest) message);
-        } else if (message instanceof SendMessageRequest) {
-            handleSendMessageRequest((SendMessageRequest) message);
-        } else if (message instanceof MessageSentRequest) {
-            handleMessageSentRequest((MessageSentRequest) message);
-        } else if (message instanceof DisconnectRequest) {
-            handleDisconnectRequest((DisconnectRequest) message);
-        }
-    }
-
-    private void handleMessageSentRequest(MessageSentRequest message) {
+    private void handleMessageSentRequest(MsgSentRequest message) {
         String messageSender = message.getMessageSender();
         if (clients.containsKey(messageSender)) {
             ClientInteractor senderClient = clients.get(messageSender);
-            senderClient.sendMessage(new MessageSent(message.getSender(), true));
+            senderClient.post(new MsgSentOutMessage(message.getSender(), true));
         }
     }
 
-    private void handleSendMessageRequest(SendMessageRequest message) {
-        SendMessage sendMessage = message.getMessage();
+    private void handleSendMessageRequest(SendMsgRequest message) {
+        SendMsgInMessage sendMessage = message.getMessage();
         if (sendMessage == null) {
             log.warning("Null message from user " + message.getSender());
             return;
@@ -87,10 +80,10 @@ public final class InteractorManager extends MessageListener {
 
         if (clients.containsKey(destination)) {
             ClientInteractor destinationClient = clients.get(destination);
-            destinationClient.sendMessage(new NewMessage(sender, sendMessage.getMessage(), true));
+            destinationClient.post(new NewMsgOutMessage(sender, sendMessage.getMessage(), true));
         } else {
             ClientInteractor senderClient = clients.get(sender);
-            senderClient.sendMessage(new MessageSent(destination, false));
+            senderClient.post(new MsgSentOutMessage(destination, false));
         }
     }
 
@@ -102,7 +95,7 @@ public final class InteractorManager extends MessageListener {
     private void handleListUsersRequest(ListUsersRequest message) {
         ClientInteractor clientInteractor = clients.get(message.getSender());
         if (clientInteractor != null) {
-            clientInteractor.sendMessage(new UserListMessage(clients.keySet()));
+            clientInteractor.post(new UserListOutMessage(clients.keySet()));
         }
     }
 
@@ -124,7 +117,7 @@ public final class InteractorManager extends MessageListener {
     private void connectUser(String username, Socket client) {
         try {
             ClientInteractor clientInteractor = new ClientInteractor(username, client, this);
-            clientInteractor.sendMessage(new ConnectionResultMessage(true));
+            clientInteractor.post(new ConnectionResultOutMessage(true));
             clients.put(username, clientInteractor);
             log.info("User " + username + " has connected");
         } catch (IOException e) {
@@ -145,13 +138,38 @@ public final class InteractorManager extends MessageListener {
      * @param clientSocket client socket
      */
     private void sendConnectionFailure(Socket clientSocket) {
-        JsonElement payload = JsonUtils.GSON.toJsonTree(new ConnectionResultMessage(false));
+        JsonElement payload = JsonUtils.GSON.toJsonTree(new ConnectionResultOutMessage(false));
         String message = JsonUtils.GSON.toJson(new Message(Message.MessageType.CONNECTION_RESULT, payload));
         try (PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
             clientSocket.setSoTimeout(CONNECTION_FAILURE_TIMEOUT);
             out.println(message);
         } catch (IOException e) {
             log.log(Level.WARNING, e.getMessage());
+        }
+    }
+
+    private class ManagerMessageQueue extends MessageQueue {
+        @Override
+        protected void handleMessage(Object message) {
+            if (message instanceof ConnectionRequest) {
+                handleConnectionRequest((ConnectionRequest) message);
+            } else if (message instanceof ListUsersRequest) {
+                handleListUsersRequest((ListUsersRequest) message);
+            } else if (message instanceof SendMsgRequest) {
+                handleSendMessageRequest((SendMsgRequest) message);
+            } else if (message instanceof MsgSentRequest) {
+                handleMessageSentRequest((MsgSentRequest) message);
+            } else if (message instanceof DisconnectRequest) {
+                handleDisconnectRequest((DisconnectRequest) message);
+            } else if (message instanceof ShutdownRequest) {
+                shutdown();
+            }
+        }
+
+        @Override
+        protected void handleError(Throwable e) {
+            log.log(Level.SEVERE, e, () -> "Exception during message handling in " +
+                    InteractorManager.this + ". Shutting down the server");
         }
     }
 }

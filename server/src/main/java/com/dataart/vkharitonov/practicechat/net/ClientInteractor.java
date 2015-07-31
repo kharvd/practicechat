@@ -1,23 +1,19 @@
 package com.dataart.vkharitonov.practicechat.net;
 
 import com.dataart.vkharitonov.practicechat.json.*;
-import com.dataart.vkharitonov.practicechat.message.DisconnectRequest;
-import com.dataart.vkharitonov.practicechat.message.ListUsersRequest;
-import com.dataart.vkharitonov.practicechat.message.MessageSentRequest;
-import com.dataart.vkharitonov.practicechat.message.SendMessageRequest;
+import com.dataart.vkharitonov.practicechat.request.DisconnectRequest;
+import com.dataart.vkharitonov.practicechat.request.ListUsersRequest;
+import com.dataart.vkharitonov.practicechat.request.MsgSentRequest;
+import com.dataart.vkharitonov.practicechat.request.SendMsgRequest;
 import com.dataart.vkharitonov.practicechat.util.JsonUtils;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -25,19 +21,19 @@ import java.util.logging.Logger;
  * <p>
  * Handles following messages:
  * <ul>
- * <li>{@link ConnectionResultMessage} - sends an acknowledgement to the newly connected user</li>
- * <li>{@link UserListMessage} - sends the received user list to the user</li>
- * <li>{@link NewMessage} - sends a message to the current user</li>
- * <li>{@link MessageSent} - sends "message sent" acknowledgement to the current user</li>
+ * <li>{@link ConnectionResultOutMessage} - sends an acknowledgement to the newly connected user</li>
+ * <li>{@link UserListOutMessage} - sends the received user list to the user</li>
+ * <li>{@link NewMsgOutMessage} - sends a message to the current user</li>
+ * <li>{@link MsgSentOutMessage} - sends "message sent" acknowledgement to the current user</li>
  *
  * <li>{@link ListUsersRequest} - asks the interaction manager to return a user list</li>
- * <li>{@link SendMessageRequest} - asks the interaction manager to send a message to some user.
- * Must reply with {@link MessageSentRequest} as soon as the message is sent</li>
- * <li>{@link MessageSentRequest} - asks the interaction manager to send a "message sent" ack to some user</li>
+ * <li>{@link SendMsgRequest} - asks the interaction manager to send a message to some user.
+ * Must reply with {@link MsgSentRequest} as soon as the message is sent</li>
+ * <li>{@link MsgSentRequest} - asks the interaction manager to send a "message sent" ack to some user</li>
  * <li>{@link DisconnectRequest} - disconnects current user, notifies the interaction manager and shuts down</li>
  * </ul>
  */
-public final class ClientInteractor extends MessageListener {
+public final class ClientInteractor implements MessageListener {
 
     private final static Logger log = Logger.getLogger(ClientInteractor.class.getName());
 
@@ -46,7 +42,9 @@ public final class ClientInteractor extends MessageListener {
     private Socket clientSocket;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private InteractorManager interactorManager;
-    private volatile boolean isReadRunning;
+
+    private MessageQueue messageQueue;
+    private MessageProducer messageProducer;
 
     /**
      * @param username username associated with the client
@@ -62,28 +60,11 @@ public final class ClientInteractor extends MessageListener {
 
         writer = new PrintWriter(clientSocket.getOutputStream(), true);
 
-        startMessageQueue();
-        isReadRunning = true;
-        new SocketReadThread().start();
-    }
+        messageQueue = new ClientMessageQueue();
+        messageQueue.start();
 
-    @Override
-    protected void handleMessage(Object message) {
-        if (message instanceof ConnectionResultMessage) {
-            sendMessageToClient(Message.MessageType.CONNECTION_RESULT, message);
-        } else if (message instanceof UserListMessage) {
-            sendMessageToClient(Message.MessageType.USER_LIST, message);
-        } else if (message instanceof NewMessage) {
-            sendNewMessage((NewMessage) message);
-        } else if (message instanceof MessageSent) {
-            sendMessageToClient(Message.MessageType.MESSAGE_SENT, message);
-        } else if (message instanceof ListUsersRequest ||
-                message instanceof SendMessageRequest ||
-                message instanceof MessageSentRequest) {
-            sendToManager(message);
-        } else if (message instanceof DisconnectRequest) {
-            handleDisconnectRequest(message);
-        }
+        messageProducer = new MessageProducer();
+        messageProducer.start(clientSocket.getInputStream(), new MessageConsumer());
     }
 
     private <T> CompletableFuture<Void> sendMessageToClient(Message.MessageType type, T payload) {
@@ -92,21 +73,20 @@ public final class ClientInteractor extends MessageListener {
         return CompletableFuture.runAsync(() -> writeToClient(json), executor);
     }
 
-    private void sendNewMessage(NewMessage message) {
+    private void sendNewMessage(NewMsgOutMessage message) {
         CompletableFuture<Void> future = sendMessageToClient(Message.MessageType.NEW_MESSAGE, message);
-        future.thenRun(() -> sendMessage(new MessageSentRequest(username, message.getUsername())));
+        future.thenRun(() -> messageQueue.post(new MsgSentRequest(username, message.getUsername())));
     }
 
-    private void handleDisconnectRequest(Object message) {
-        isReadRunning = false;
-        closeConnection();
-        stopMessageQueue();
+    private void handleDisconnectRequest(DisconnectRequest message) {
+        messageQueue.stop();
         executor.shutdown();
-        interactorManager.handleMessage(message);
+        closeConnection();
+        interactorManager.post(message);
     }
 
     private void sendToManager(Object message) {
-        interactorManager.sendMessage(message);
+        interactorManager.post(message);
     }
 
     private void closeConnection() {
@@ -123,49 +103,71 @@ public final class ClientInteractor extends MessageListener {
         writer.println(message);
     }
 
-    private class SocketReadThread extends Thread {
-        @Override
-        public void run() {
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                 JsonReader reader = new JsonReader(in)) {
-                reader.setLenient(true);
-                while (isReadRunning && reader.peek() != JsonToken.END_DOCUMENT) {
-                    Message message = JsonUtils.GSON.fromJson(reader, Message.class);
+    @Override
+    public void post(Object message) {
+        messageQueue.post(message);
+    }
 
-                    log.info("Received message from " + username + ": " + message);
-                    if (message != null) {
-                        deliverMessage(message);
-                    } else {
-                        disconnectRequest();
-                    }
-                }
-            } catch (JsonSyntaxException | IOException e) {
-                log.info("Error reading from user " + username + ": " + e.getLocalizedMessage());
-                disconnectRequest();
+    private class ClientMessageQueue extends MessageQueue {
+        @Override
+        protected void handleMessage(Object message) {
+            if (message instanceof ConnectionResultOutMessage) {
+                sendMessageToClient(Message.MessageType.CONNECTION_RESULT, message);
+            } else if (message instanceof UserListOutMessage) {
+                sendMessageToClient(Message.MessageType.USER_LIST, message);
+            } else if (message instanceof NewMsgOutMessage) {
+                sendNewMessage((NewMsgOutMessage) message);
+            } else if (message instanceof MsgSentOutMessage) {
+                sendMessageToClient(Message.MessageType.MESSAGE_SENT, message);
+            } else if (message instanceof ListUsersRequest ||
+                    message instanceof SendMsgRequest ||
+                    message instanceof MsgSentRequest) {
+                sendToManager(message);
+            } else if (message instanceof DisconnectRequest) {
+                handleDisconnectRequest((DisconnectRequest) message);
             }
         }
 
-        private void deliverMessage(Message message) {
+        @Override
+        protected void handleError(Throwable e) {
+            log.log(Level.SEVERE, e, () -> "Exception during message handling in " +
+                    ClientInteractor.this + ". Shutting down the server");
+        }
+    }
+
+    private class MessageConsumer implements MessageProducer.Consumer {
+        @Override
+        public void onNext(Message message) {
+            log.info("Received message from " + username + ": " + message);
+
             if (message.getMessageType() != null) {
                 switch (message.getMessageType()) {
                     case LIST_USERS:
-                        sendMessage(new ListUsersRequest(username));
+                        messageQueue.post(new ListUsersRequest(username));
                         break;
                     case DISCONNECT:
-                        disconnectRequest();
+                        messageProducer.stop();
                         break;
                     case SEND_MESSAGE:
-                        SendMessage msg = JsonUtils.GSON.fromJson(message.getPayload(), SendMessage.class);
-                        sendMessage(new SendMessageRequest(username, msg));
+                        SendMsgInMessage msg = JsonUtils.GSON.fromJson(message.getPayload(), SendMsgInMessage.class);
+                        messageQueue.post(new SendMsgRequest(username, msg));
+                        break;
                     default:
+                        log.info("Unexpected message from " + username);
                         break;
                 }
             }
         }
 
-        private void disconnectRequest() {
-            isReadRunning = false;
-            sendMessage(new DisconnectRequest(username));
+        @Override
+        public void onError(Throwable e) {
+            log.info("Error reading from user " + username + ": " + e.getLocalizedMessage());
+            messageQueue.post(new DisconnectRequest(username));
+        }
+
+        @Override
+        public void onCompleted() {
+            messageQueue.post(new DisconnectRequest(username));
         }
     }
 }

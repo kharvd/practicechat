@@ -1,4 +1,4 @@
-package com.dataart.vkharitonov.practicechat.message;
+package com.dataart.vkharitonov.practicechat.request;
 
 /**
  * Request made by a specific user

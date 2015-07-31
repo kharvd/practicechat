@@ -1,10 +1,10 @@
-package com.dataart.vkharitonov.practicechat.message;
+package com.dataart.vkharitonov.practicechat.request;
 
-public class MessageSentRequest extends Request {
+public class MsgSentRequest extends Request {
 
     private String messageSender;
 
-    public MessageSentRequest(String sender, String messageSender) {
+    public MsgSentRequest(String sender, String messageSender) {
         super(sender);
         this.messageSender = messageSender;
     }

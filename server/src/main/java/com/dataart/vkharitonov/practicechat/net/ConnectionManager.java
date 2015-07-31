@@ -1,8 +1,8 @@
 package com.dataart.vkharitonov.practicechat.net;
 
-import com.dataart.vkharitonov.practicechat.json.ConnectMessage;
+import com.dataart.vkharitonov.practicechat.json.ConnectInMessage;
 import com.dataart.vkharitonov.practicechat.json.Message;
-import com.dataart.vkharitonov.practicechat.message.ConnectionRequest;
+import com.dataart.vkharitonov.practicechat.request.ConnectionRequest;
 import com.dataart.vkharitonov.practicechat.util.JsonUtils;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
@@ -93,8 +93,8 @@ public class ConnectionManager {
                 client.setSoTimeout(0);
 
                 if (message.getMessageType() == Message.MessageType.CONNECT) {
-                    ConnectMessage connectMessage = JsonUtils.GSON.fromJson(message.getPayload(), ConnectMessage.class);
-                    connectionListener.sendMessage(new ConnectionRequest(connectMessage, client));
+                    ConnectInMessage connectMessage = JsonUtils.GSON.fromJson(message.getPayload(), ConnectInMessage.class);
+                    connectionListener.post(new ConnectionRequest(connectMessage, client));
                 } else {
                     throw new JsonSyntaxException("First message should be `connect`");
                 }
