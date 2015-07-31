@@ -8,8 +8,10 @@ import com.dataart.vkharitonov.practicechat.server.request.MsgSentRequest;
 import com.dataart.vkharitonov.practicechat.server.request.SendMsgRequest;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,7 +60,7 @@ public final class ClientInteractor implements MessageListener {
         this.clientSocket = clientSocket;
         this.interactorManager = interactorManager;
 
-        writer = new PrintWriter(clientSocket.getOutputStream(), true);
+        writer = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8), true);
 
         messageQueue = new ClientMessageQueue();
         messageQueue.start();

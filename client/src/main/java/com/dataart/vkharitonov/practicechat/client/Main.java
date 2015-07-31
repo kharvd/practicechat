@@ -5,13 +5,14 @@ import com.dataart.vkharitonov.practicechat.client.cli.CommandReader;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 
 public class Main {
     private final static Logger log = Logger.getLogger(Main.class.getName());
 
     public static void main(String[] args) {
-        BufferedReader cin = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader cin = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
 
         new CommandReader(cin, new MainCommandHandler());
     }
@@ -19,7 +20,7 @@ public class Main {
     private static class MainCommandHandler implements CommandHandler {
         @Override
         public void onConnect(String username, String host, int port) {
-            System.out.format("Connecting to %s:%d as %s\n", host, port, username);
+            System.out.format("Connecting to %s:%d as %s%n", host, port, username);
         }
 
         @Override
@@ -29,7 +30,7 @@ public class Main {
 
         @Override
         public void onSend(String username, String message) {
-            System.out.format("Sending message \"%s\" to %s\n", message, username);
+            System.out.format("Sending message \"%s\" to %s%n", message, username);
         }
 
         @Override

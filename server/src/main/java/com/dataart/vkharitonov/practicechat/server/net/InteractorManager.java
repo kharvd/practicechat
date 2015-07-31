@@ -6,8 +6,10 @@ import com.dataart.vkharitonov.practicechat.server.request.*;
 import com.google.gson.JsonElement;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
@@ -173,7 +175,7 @@ public final class InteractorManager implements MessageListener {
     private void sendConnectionFailure(Socket clientSocket) {
         JsonElement payload = JsonUtils.GSON.toJsonTree(new ConnectionResultOutMessage(false));
         String message = JsonUtils.GSON.toJson(new Message(Message.MessageType.CONNECTION_RESULT, payload));
-        try (PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8), true)) {
             clientSocket.setSoTimeout(CONNECTION_FAILURE_TIMEOUT);
             out.println(message);
         } catch (IOException e) {

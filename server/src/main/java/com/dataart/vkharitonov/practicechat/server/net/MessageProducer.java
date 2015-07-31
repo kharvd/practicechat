@@ -8,6 +8,7 @@ import com.google.gson.stream.JsonToken;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Reads messages from an input stream asynchronously and notifies the consumer about them
@@ -79,7 +80,7 @@ public class MessageProducer {
 
         @Override
         public void run() {
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
                  JsonReader reader = new JsonReader(in)) {
                 reader.setLenient(true);
                 while (isRunning && reader.peek() != JsonToken.END_DOCUMENT) {
