@@ -6,7 +6,6 @@ import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.server.request.ConnectionRequest;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
-import com.sun.istack.internal.NotNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -40,7 +39,7 @@ public final class ConnectionManager {
      * @param connectionListener must handle {@link ConnectionRequest} messages
      * @throws IOException thrown if couldn't create server socket
      */
-    public void start(int port, @NotNull MessageListener connectionListener) throws IOException {
+    public void start(int port, MessageListener connectionListener) throws IOException {
         server = new ServerSocket(port);
 
         this.connectionListener = connectionListener;
