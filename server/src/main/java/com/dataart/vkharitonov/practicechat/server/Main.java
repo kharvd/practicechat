@@ -10,20 +10,37 @@ import java.util.logging.Logger;
 
 public class Main {
 
-    public static final int PORT = 1234;
     private final static Logger log = Logger.getLogger(Main.class.getName());
 
     public static void main(String[] args) {
+        if (args.length < 1) {
+            showUsageAndExit();
+        }
+
+        int port;
+
+        try {
+            port = Integer.parseInt(args[0]);
+        } catch (NumberFormatException e) {
+            showUsageAndExit();
+            return;
+        }
+
         ConnectionManager connectionManager = new ConnectionManager();
         InteractorManager interactorManager = new InteractorManager();
 
         try {
-            connectionManager.start(PORT, interactorManager);
-            log.info("Started server on port " + PORT);
+            connectionManager.start(port, interactorManager);
+            log.info("Started server on port " + port);
         } catch (IOException e) {
             log.log(Level.SEVERE, e, () -> "Couldn't start the server");
             interactorManager.post(new ShutdownRequest());
         }
+    }
+
+    private static void showUsageAndExit() {
+        System.out.println("usage: server.jar <port>");
+        System.exit(1);
     }
 
 }
