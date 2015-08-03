@@ -14,6 +14,10 @@ PostgreSQL connection information. For example:
     
 Then, execute `mvn compile flyway:migrate` in `server` subdirectory to configure the database.
 
+## Building project
+
+Use `package` Maven task for root project. Two standalone jars will be placed in `out/` directory
+
 ## Chat protocol description
 
 Chat uses JSON-based protocol for client-server communication. 

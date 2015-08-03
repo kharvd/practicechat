@@ -38,10 +38,17 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.5.5</version>
                 <configuration>
+                    <outputDirectory>
+                        ../out
+                    </outputDirectory>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
-
+                    <archive>
+                        <manifest>
+                            <mainClass>com.dataart.vkharitonov.practicechat.server.Main</mainClass>
+                        </manifest>
+                    </archive>
                 </configuration>
                 <executions>
                     <execution>
