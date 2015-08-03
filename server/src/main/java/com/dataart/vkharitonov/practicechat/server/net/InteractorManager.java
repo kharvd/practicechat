@@ -65,7 +65,7 @@ public final class InteractorManager implements MessageListener {
         String destination = message.getSender();
         if (clients.containsKey(messageSender)) {
             ClientInteractor senderClient = clients.get(messageSender);
-            senderClient.post(new MsgSentOutMessage(destination, true));
+            senderClient.post(new MsgSentOutMessage(destination));
         }
 
         if (nonDeliveredMsgs.containsKey(destination)) {

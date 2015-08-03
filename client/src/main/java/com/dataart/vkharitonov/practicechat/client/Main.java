@@ -124,7 +124,7 @@ public class Main {
         }
 
         @Override
-        public void onMessageSent(String user, boolean online) {
+        public void onMessageSent(String user) {
             System.out.format("Message to %s has been sent%n", user);
         }
 

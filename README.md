@@ -27,7 +27,7 @@ Disconnects currently connected user from the server.
 Payload must be `null`.
 
 #### send_message
-Sends a message to a specified user.
+Sends a message to the specified user.
 
 Payload example:
 
@@ -63,15 +63,12 @@ Payload example:
         }
 
 #### message_sent
-Sent by the server upon the client's attempt to send a message to some user. Contains information 
-whether the user is currently online. If the user is offline, message will be delivered
-as soon as the user goes online.
+Sent by a server as an acknowledgement of the message delivery by a user.
 
 Payload example:
 
         {
-            "username": "NAGibaTOR_40k",
-            "online": true
+            "username": "NAGibaTOR_40k"
         }
 
 #### new_message

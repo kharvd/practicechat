@@ -115,7 +115,7 @@ public class ChatConnection {
 
     private void handleMsgSent(Message message) {
         MsgSentOutMessage payload = JsonUtils.GSON.fromJson(message.getPayload(), MsgSentOutMessage.class);
-        listener.onMessageSent(payload.getUsername(), payload.isOnline());
+        listener.onMessageSent(payload.getUsername());
     }
 
     private void handleConnectionResult(Message message) {

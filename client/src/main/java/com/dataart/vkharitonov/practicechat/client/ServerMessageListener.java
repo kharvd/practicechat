@@ -8,7 +8,7 @@ import java.util.List;
 public interface ServerMessageListener {
     void onConnectionResult(boolean success);
 
-    void onMessageSent(String user, boolean online);
+    void onMessageSent(String user);
 
     void onUserList(List<String> users);
 
