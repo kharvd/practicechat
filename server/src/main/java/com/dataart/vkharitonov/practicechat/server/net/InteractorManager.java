@@ -3,7 +3,6 @@ package com.dataart.vkharitonov.practicechat.server.net;
 import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.server.request.*;
-import com.google.gson.JsonElement;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -173,8 +172,7 @@ public final class InteractorManager implements MessageListener {
      * @param clientSocket client socket
      */
     private void sendConnectionFailure(Socket clientSocket) {
-        JsonElement payload = JsonUtils.GSON.toJsonTree(new ConnectionResultOutMessage(false));
-        String message = JsonUtils.GSON.toJson(new Message(Message.MessageType.CONNECTION_RESULT, payload));
+        String message = JsonUtils.GSON.toJson(new Message(Message.MessageType.CONNECTION_RESULT, new ConnectionResultOutMessage(false)));
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8), true)) {
             clientSocket.setSoTimeout(CONNECTION_FAILURE_TIMEOUT);
             out.println(message);

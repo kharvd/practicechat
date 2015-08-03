@@ -5,11 +5,20 @@ import java.io.Reader;
 import java.io.StreamTokenizer;
 import java.util.Objects;
 
+/**
+ * Reads user commands from a {@link Reader}
+ */
 public class CommandReader {
 
     private final StreamTokenizer tok;
     private CommandHandler handler;
 
+    /**
+     * Creates a new CommandReader
+     *
+     * @param in      Reader to read commands from
+     * @param handler Callback which handles incoming commands
+     */
     public CommandReader(Reader in, CommandHandler handler) {
         if (handler == null) {
             throw new NullPointerException();
@@ -51,6 +60,9 @@ public class CommandReader {
                         case "send":
                             parseSendMsgCommand();
                             break;
+                        case "help":
+                            handler.onHelp();
+                            break;
                         default:
                             throw new IllegalArgumentException("Unknown command: " + tok.sval);
                     }
@@ -65,6 +77,8 @@ public class CommandReader {
 
             ttype = tok.nextToken();
         }
+
+        handler.onExit();
     }
 
 
@@ -84,7 +98,7 @@ public class CommandReader {
         }
 
         String message = tok.sval;
-        handler.onSend(username, message);
+        handler.onSendMessage(username, message);
     }
 
     private void parseConnectCommand() throws IOException, IllegalArgumentException {

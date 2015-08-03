@@ -2,6 +2,7 @@ package com.dataart.vkharitonov.practicechat.server.net;
 
 import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
+import com.dataart.vkharitonov.practicechat.common.util.MessageProducer;
 import com.dataart.vkharitonov.practicechat.server.request.DisconnectRequest;
 import com.dataart.vkharitonov.practicechat.server.request.ListUsersRequest;
 import com.dataart.vkharitonov.practicechat.server.request.MsgSentRequest;
@@ -70,7 +71,7 @@ public final class ClientInteractor implements MessageListener {
     }
 
     private <T> CompletableFuture<Void> sendMessageToClient(Message.MessageType type, T payload) {
-        Message message = new Message(type, JsonUtils.GSON.toJsonTree(payload));
+        Message message = new Message(type, payload);
         String json = JsonUtils.GSON.toJson(message);
         return CompletableFuture.runAsync(() -> writeToClient(json), executor);
     }

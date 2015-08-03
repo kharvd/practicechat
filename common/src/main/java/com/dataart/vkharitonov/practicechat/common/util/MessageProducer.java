@@ -1,7 +1,6 @@
-package com.dataart.vkharitonov.practicechat.server.net;
+package com.dataart.vkharitonov.practicechat.common.util;
 
 import com.dataart.vkharitonov.practicechat.common.json.Message;
-import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
@@ -13,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * Reads messages from an input stream asynchronously and notifies the consumer about them
  */
-public class MessageProducer {
+public final class MessageProducer {
 
     private volatile boolean isRunning;
     private ReadThread readThread;

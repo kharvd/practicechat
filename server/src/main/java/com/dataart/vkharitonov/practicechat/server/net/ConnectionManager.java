@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 /**
  * Accepts connection requests from clients and redirects them to the message listener.
  */
-public class ConnectionManager {
+public final class ConnectionManager {
 
     private final static Logger log = Logger.getLogger(ConnectionManager.class.getName());
     private final static int MAX_CONNECTION_POOL = 10;

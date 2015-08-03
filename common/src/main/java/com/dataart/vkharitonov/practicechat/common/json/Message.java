@@ -1,5 +1,6 @@
 package com.dataart.vkharitonov.practicechat.common.json;
 
+import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.annotations.SerializedName;
 
@@ -8,9 +9,9 @@ public class Message {
     private MessageType messageType;
     private JsonElement payload;
 
-    public Message(MessageType messageType, JsonElement payload) {
+    public <T> Message(MessageType messageType, T payload) {
         this.messageType = messageType;
-        this.payload = payload;
+        this.payload = JsonUtils.GSON.toJsonTree(payload);
     }
 
     public MessageType getMessageType() {

@@ -7,4 +7,8 @@ public class ConnectionResultOutMessage {
     public ConnectionResultOutMessage(boolean success) {
         this.success = success;
     }
+
+    public boolean isSuccess() {
+        return success;
+    }
 }

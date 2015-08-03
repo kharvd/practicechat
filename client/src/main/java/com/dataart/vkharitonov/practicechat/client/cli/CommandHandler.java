@@ -5,9 +5,18 @@ public interface CommandHandler {
 
     void onList();
 
-    void onSend(String username, String message);
+    void onSendMessage(String username, String message);
 
     void onDisconnect();
 
+    void onExit();
+
+    void onHelp();
+
+    /**
+     * Called when failed to parse user's input
+     *
+     * @param e Thrown exception with a human-readable message
+     */
     void onError(Throwable e);
 }

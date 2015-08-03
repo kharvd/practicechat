@@ -10,4 +10,8 @@ public class UserListOutMessage {
     public UserListOutMessage(Collection<String> users) {
         this.users = new ArrayList<>(users);
     }
+
+    public List<String> getUsers() {
+        return users;
+    }
 }

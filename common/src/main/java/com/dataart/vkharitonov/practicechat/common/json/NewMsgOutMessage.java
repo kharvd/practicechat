@@ -17,4 +17,16 @@ public class NewMsgOutMessage {
     public String getUsername() {
         return username;
     }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public boolean isOnline() {
+        return online;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
 }
