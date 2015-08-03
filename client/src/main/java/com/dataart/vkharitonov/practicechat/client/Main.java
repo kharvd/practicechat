@@ -39,6 +39,9 @@ public class Main {
         return true;
     }
 
+    /**
+     * Listens to messages from the user
+     */
     private static class MainCommandHandler implements CommandHandler {
 
         @Override
@@ -62,7 +65,7 @@ public class Main {
                     connection.listUsers();
                 } catch (IOException e) {
                     System.out.println("Couldn't send message to the server. Disconnecting");
-                    connection.close();
+                    connection.disconnect();
                 }
             }
         }
@@ -75,7 +78,7 @@ public class Main {
                     connection.sendMessage(username, message);
                 } catch (IOException e) {
                     System.out.println("Couldn't send message. Disconnecting");
-                    connection.close();
+                    connection.disconnect();
                 }
             }
         }
@@ -104,6 +107,9 @@ public class Main {
         }
     }
 
+    /**
+     * Listens to messages from the server
+     */
     private static class MainServerMessageListener implements ServerMessageListener {
         @Override
         public void onConnectionResult(boolean success) {
@@ -112,7 +118,7 @@ public class Main {
             } else {
                 System.out.println("Username is already taken");
                 if (connection != null) {
-                    connection.close();
+                    connection.disconnect();
                 }
             }
         }

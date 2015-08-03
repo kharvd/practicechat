@@ -12,6 +12,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Manages client's connection to the server
+ */
 public class ChatConnection {
 
     private final static Logger log = Logger.getLogger(ChatConnection.class.getName());
@@ -30,11 +33,19 @@ public class ChatConnection {
         writeConnectMessage(username);
     }
 
+    /**
+     * Checks if this client is accepting and sending messages
+     *
+     * @return true, if connection is established
+     */
     public boolean isConnected() {
         return socket != null && !socket.isClosed();
     }
 
-    public void close() {
+    /**
+     * Closes connection. No more messages are accepted or sent
+     */
+    private void close() {
         try {
             if (socket != null) {
                 socket.close();
@@ -47,6 +58,9 @@ public class ChatConnection {
         }
     }
 
+    /**
+     *  Sends `disconnect` message to the server. If it wasn't successful, just closes the connection
+     */
     public void disconnect() {
         try {
             if (socket != null) {
@@ -59,10 +73,20 @@ public class ChatConnection {
         }
     }
 
+    /**
+     * Sends `list_users` message to the server
+     * @throws IOException
+     */
     public void listUsers() throws IOException {
         sendMessage(Message.MessageType.LIST_USERS, null);
     }
 
+    /**
+     * Sends `send_message` message to the server
+     * @param destination user to send this message to
+     * @param message message body
+     * @throws IOException
+     */
     public void sendMessage(String destination, String message) throws IOException {
         sendMessage(Message.MessageType.SEND_MESSAGE, new SendMsgInMessage(destination, message));
     }
