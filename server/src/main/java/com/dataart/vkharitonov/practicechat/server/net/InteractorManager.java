@@ -2,6 +2,7 @@ package com.dataart.vkharitonov.practicechat.server.net;
 
 import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
+import com.dataart.vkharitonov.practicechat.server.db.DbUtils;
 import com.dataart.vkharitonov.practicechat.server.request.*;
 
 import java.io.IOException;
@@ -9,10 +10,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -38,16 +37,13 @@ public final class InteractorManager implements MessageListener {
     private static final int CONNECTION_FAILURE_TIMEOUT = 1000;
 
     private Map<String, ClientInteractor> clients = new HashMap<>();
-    private ExecutorService executor;
-
+    private ExecutorService writeToClientExecutor;
     private MessageQueue messageQueue;
 
-    private Map<String, Queue<SendMsgRequest>> nonDeliveredMsgs = new HashMap<>();
-
     public InteractorManager() {
+        writeToClientExecutor = Executors.newCachedThreadPool();
         messageQueue = new ManagerMessageQueue();
         messageQueue.start();
-        executor = Executors.newSingleThreadExecutor();
     }
 
     @Override
@@ -57,7 +53,7 @@ public final class InteractorManager implements MessageListener {
 
     private void shutdown() {
         messageQueue.stop();
-        executor.shutdown();
+        writeToClientExecutor.shutdown();
     }
 
     private void handleMessageSentRequest(MsgSentRequest message) {
@@ -68,13 +64,7 @@ public final class InteractorManager implements MessageListener {
             senderClient.post(new MsgSentOutMessage(destination));
         }
 
-        if (nonDeliveredMsgs.containsKey(destination)) {
-            Queue<SendMsgRequest> queue = nonDeliveredMsgs.get(destination);
-            queue.remove();
-            if (queue.isEmpty()) {
-                nonDeliveredMsgs.remove(destination);
-            }
-        }
+        DbUtils.removeOldestMessage(destination);
     }
 
     private void handleSendMessageRequest(SendMsgRequest message) {
@@ -96,16 +86,12 @@ public final class InteractorManager implements MessageListener {
             ClientInteractor destinationClient = clients.get(destination);
             destinationClient.post(new NewMsgOutMessage(sender, sendMessage.getMessage(), true, message.getTimestamp()));
         } else {
-            enqueueOfflineMessage(destination, message);
+            enqueueOfflineMessage(message);
         }
     }
 
-    private void enqueueOfflineMessage(String destination, SendMsgRequest message) {
-        if (!nonDeliveredMsgs.containsKey(destination)) {
-            nonDeliveredMsgs.put(destination, new ArrayDeque<>());
-        }
-
-        nonDeliveredMsgs.get(destination).add(message);
+    private void enqueueOfflineMessage(SendMsgRequest message) {
+        DbUtils.addUndeliveredMsg(message);
     }
 
     private void handleDisconnectRequest(DisconnectRequest message) {
@@ -126,10 +112,10 @@ public final class InteractorManager implements MessageListener {
 
         if (username == null) {
             log.info("Username can't be null");
-            executor.submit(() -> sendConnectionFailure(client));
+            writeToClientExecutor.submit(() -> sendConnectionFailure(client));
         } else if (clients.containsKey(username)) {
             log.info("User " + username + " is already connected");
-            executor.submit(() -> sendConnectionFailure(client));
+            writeToClientExecutor.submit(() -> sendConnectionFailure(client));
         } else {
             connectUser(username, client);
         }
@@ -156,14 +142,16 @@ public final class InteractorManager implements MessageListener {
     }
 
     private void sendNonDeliveredMsgs(String username) {
-        if (nonDeliveredMsgs.containsKey(username)) {
-            nonDeliveredMsgs.get(username).forEach(sendMsgRequest -> {
+        DbUtils.getUndeliveredMsgsForUser(username).thenApply(undeliveredMsgs -> {
+            undeliveredMsgs.forEach(sendMsgRequest -> {
                 SendMsgInMessage sendMessage = sendMsgRequest.getMessage();
                 String sender = sendMsgRequest.getSender();
                 clients.get(username).post(new NewMsgOutMessage(sender, sendMessage.getMessage(), clients.containsKey(sender),
                         sendMsgRequest.getTimestamp()));
             });
-        }
+
+            return null;
+        });
     }
 
     /**

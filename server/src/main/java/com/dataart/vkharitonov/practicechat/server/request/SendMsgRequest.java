@@ -12,6 +12,13 @@ public class SendMsgRequest extends Request {
         timestamp = System.currentTimeMillis();
     }
 
+    public SendMsgRequest(String sender, long timestamp, SendMsgInMessage message) {
+        super(sender);
+        this.message = message;
+        this.timestamp = timestamp;
+    }
+
+
     public SendMsgInMessage getMessage() {
         return message;
     }
@@ -24,6 +31,7 @@ public class SendMsgRequest extends Request {
     public String toString() {
         return "SendMsgRequest{" +
                 "message=" + message +
+                ", timestamp=" + timestamp +
                 '}';
     }
 }
