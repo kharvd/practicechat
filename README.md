@@ -2,7 +2,7 @@ Simplistic chat written in Java
 
 ## DB configuration
 
-This project uses PostgreSQL and Flyway Maven Plugin ([http://flywaydb.org/getstarted/firststeps/maven.html]) 
+This project uses PostgreSQL and [[http://flywaydb.org/getstarted/firststeps/maven.html | Flyway Maven Plugin]]
 for database migration.
 
 First you have to create `flyway.properties` file under `server` directory. There, you should specify your 
