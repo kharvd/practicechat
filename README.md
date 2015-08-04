@@ -1,22 +1,21 @@
 Simplistic chat written in Java
 
-## DB configuration
-
-This project uses PostgreSQL and [[http://flywaydb.org/getstarted/firststeps/maven.html | Flyway Maven Plugin]]
-for database migration.
-
-First you have to create `flyway.properties` file under `server` directory. There, you should specify your 
-PostgreSQL connection information. For example:
-
-    flyway.url=jdbc:postgresql://localhost:5432/practicechat
-    flyway.user=postgres
-    flyway.password=1234
-    
-Then, execute `mvn compile flyway:migrate` in `server` subdirectory to configure the database.
-
 ## Building project
 
 Use `package` Maven task for root project. Two standalone jars will be placed in `out/` directory
+
+## DB configuration
+
+This project uses PostgreSQL and [[http://flywaydb.org/ | Flyway]] for database migration.
+
+To run the server you have to supply properties file, containing information about DB connection and TCP port.
+Example:
+
+    server.port = 1234
+    db.name = practicechat
+    db.serverName = localhost
+    db.username = postgres
+    db.password = 1234
 
 ## Chat protocol description
 

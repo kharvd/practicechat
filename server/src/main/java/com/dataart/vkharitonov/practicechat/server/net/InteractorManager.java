@@ -2,7 +2,8 @@ package com.dataart.vkharitonov.practicechat.server.net;
 
 import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
-import com.dataart.vkharitonov.practicechat.server.db.DbUtils;
+import com.dataart.vkharitonov.practicechat.server.db.DbHelper;
+import com.dataart.vkharitonov.practicechat.server.db.UndeliveredMsgDao;
 import com.dataart.vkharitonov.practicechat.server.request.*;
 
 import java.io.IOException;
@@ -64,7 +65,7 @@ public final class InteractorManager implements MessageListener {
             senderClient.post(new MsgSentOutMessage(destination));
         }
 
-        DbUtils.removeOldestMessage(destination);
+        getMsgDao().removeOldestMessage(destination);
     }
 
     private void handleSendMessageRequest(SendMsgRequest message) {
@@ -82,7 +83,7 @@ public final class InteractorManager implements MessageListener {
             return;
         }
 
-        DbUtils.addUndeliveredMsg(message);
+        getMsgDao().addUndeliveredMsg(message);
 
         if (clients.containsKey(destination)) {
             ClientInteractor destinationClient = clients.get(destination);
@@ -138,7 +139,7 @@ public final class InteractorManager implements MessageListener {
     }
 
     private void sendNonDeliveredMsgs(String username) {
-        DbUtils.getUndeliveredMsgsForUser(username).thenApply(undeliveredMsgs -> {
+        getMsgDao().getUndeliveredMsgsForUser(username).thenApply(undeliveredMsgs -> {
             undeliveredMsgs.forEach(sendMsgRequest -> {
                 SendMsgInMessage sendMessage = sendMsgRequest.getMessage();
                 String sender = sendMsgRequest.getSender();
@@ -163,6 +164,10 @@ public final class InteractorManager implements MessageListener {
         } catch (IOException e) {
             log.log(Level.WARNING, e.getMessage());
         }
+    }
+
+    private UndeliveredMsgDao getMsgDao() {
+        return DbHelper.getInstance().getMsgDao();
     }
 
     private class ManagerMessageQueue extends MessageQueue {
