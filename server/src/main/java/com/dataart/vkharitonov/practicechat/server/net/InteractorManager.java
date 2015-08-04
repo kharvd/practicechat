@@ -82,16 +82,12 @@ public final class InteractorManager implements MessageListener {
             return;
         }
 
+        DbUtils.addUndeliveredMsg(message);
+
         if (clients.containsKey(destination)) {
             ClientInteractor destinationClient = clients.get(destination);
             destinationClient.post(new NewMsgOutMessage(sender, sendMessage.getMessage(), true, message.getTimestamp()));
-        } else {
-            enqueueOfflineMessage(message);
         }
-    }
-
-    private void enqueueOfflineMessage(SendMsgRequest message) {
-        DbUtils.addUndeliveredMsg(message);
     }
 
     private void handleDisconnectRequest(DisconnectRequest message) {
