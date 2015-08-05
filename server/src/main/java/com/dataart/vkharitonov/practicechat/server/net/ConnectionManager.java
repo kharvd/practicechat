@@ -29,9 +29,9 @@ public final class ConnectionManager {
     private final static int MAX_CONNECTION_POOL = 10;
     private final static int CONNECT_MESSAGE_TIMEOUT = 1000;
     private ServerSocket server;
-    private volatile boolean isRunning;
     private MessageListener connectionListener;
     private ExecutorService executor;
+    private WorkerThread workerThread;
 
     /**
      * Starts listening to incoming client connections.
@@ -45,9 +45,8 @@ public final class ConnectionManager {
 
         this.connectionListener = connectionListener;
 
-        isRunning = true;
         executor = Executors.newFixedThreadPool(MAX_CONNECTION_POOL);
-        WorkerThread workerThread = new WorkerThread();
+        workerThread = new WorkerThread();
         workerThread.start();
     }
 
@@ -55,18 +54,15 @@ public final class ConnectionManager {
      * Stops listening to connections.
      */
     public void stop() {
-        if (isRunning) {
-            isRunning = false;
-
-            Util.closeQuietly(server);
-            executor.shutdown();
-        }
+        workerThread.interrupt();
+        Util.closeQuietly(server);
+        executor.shutdown();
     }
 
     private class WorkerThread extends Thread {
         @Override
         public void run() {
-            while (isRunning) {
+            while (!isInterrupted()) {
                 try {
                     Socket client = server.accept();
                     executor.submit(() -> handleConnection(client));

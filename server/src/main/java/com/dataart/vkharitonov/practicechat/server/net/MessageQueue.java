@@ -12,14 +12,12 @@ public abstract class MessageQueue implements MessageListener {
     private final static Logger log = Logger.getLogger(MessageQueue.class.getName());
 
     private BlockingQueue<Object> messageQueue = new LinkedBlockingQueue<>();
-    private volatile boolean isRunning;
     private WorkerThread workerThread;
 
     /**
      * Starts processing messages
      */
     public void start() {
-        isRunning = true;
         workerThread = new WorkerThread();
         workerThread.start();
     }
@@ -28,7 +26,6 @@ public abstract class MessageQueue implements MessageListener {
      * Stops processing messages
      */
     public void stop() {
-        isRunning = false;
         workerThread.interrupt();
     }
 
@@ -36,7 +33,7 @@ public abstract class MessageQueue implements MessageListener {
      * @return true, if the queue is accepting new messages
      */
     public boolean isRunning() {
-        return isRunning;
+        return workerThread.isAlive() && !workerThread.isInterrupted();
     }
 
     /**
@@ -70,12 +67,12 @@ public abstract class MessageQueue implements MessageListener {
 
         @Override
         public void run() {
-            while (isRunning) {
+            while (!isInterrupted()) {
                 try {
                     Object message = messageQueue.take();
                     handleMessage(message);
                 } catch (InterruptedException e) {
-                    isRunning = false;
+                    interrupt();
                 } catch (Exception e) {
                     handleError(e);
                 }

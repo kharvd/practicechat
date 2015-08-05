@@ -14,7 +14,6 @@ import java.nio.charset.StandardCharsets;
  */
 public final class MessageProducer {
 
-    private volatile boolean isRunning;
     private ReadThread readThread;
 
     /**
@@ -31,7 +30,6 @@ public final class MessageProducer {
             throw new NullPointerException();
         }
 
-        isRunning = true;
         readThread = new ReadThread(inputStream, consumer);
         readThread.start();
     }
@@ -41,7 +39,6 @@ public final class MessageProducer {
      * The InputStream which was supplied to {@link #start(InputStream, Consumer)} method will be closed
      */
     public void stop() {
-        isRunning = false;
         readThread.interrupt();
     }
 
@@ -82,20 +79,19 @@ public final class MessageProducer {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
                  JsonReader reader = new JsonReader(in)) {
                 reader.setLenient(true);
-                while (isRunning && reader.peek() != JsonToken.END_DOCUMENT) {
+                while (!isInterrupted() && reader.peek() != JsonToken.END_DOCUMENT) {
                     Message message = JsonUtils.GSON.fromJson(reader, Message.class);
 
                     if (message != null) {
                         consumer.onNext(message);
                     } else {
-                        isRunning = false;
+                        interrupt();
                     }
                 }
 
                 consumer.onCompleted();
             } catch (Exception e) {
                 consumer.onError(e);
-                isRunning = false;
             }
         }
     }

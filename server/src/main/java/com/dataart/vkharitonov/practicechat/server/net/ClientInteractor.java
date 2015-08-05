@@ -173,7 +173,9 @@ public final class ClientInteractor implements MessageListener {
         @Override
         public void onError(Throwable e) {
             log.info("Error reading from user " + username + ": " + e.getLocalizedMessage());
-            messageQueue.post(new DisconnectRequest(username));
+            if (messageQueue.isRunning()) {
+                messageQueue.post(new DisconnectRequest(username));
+            }
         }
 
         @Override
