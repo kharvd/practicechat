@@ -31,9 +31,10 @@ import java.util.logging.Logger;
  * <p>
  * <li>{@link ListUsersRequest} - asks the interaction manager to return a user list</li>
  * <li>{@link SendMsgRequest} - asks the interaction manager to send a message to some user.
- * Must reply with {@link MsgSentRequest} as soon as the message is sent</li>
+ * Replies with {@link MsgSentRequest} as soon as the message is sent</li>
  * <li>{@link MsgSentRequest} - asks the interaction manager to send a "message sent" ack to some user</li>
  * <li>{@link DisconnectRequest} - disconnects current user, notifies the interaction manager and shuts down</li>
+ * <li>{@link ShutdownCommand} - shuts down without notifying the interactor manager</li>
  * </ul>
  */
 public final class ClientInteractor implements EventListener {
@@ -75,47 +76,74 @@ public final class ClientInteractor implements EventListener {
         eventQueue.post(event);
     }
 
+    /**
+     * Shuts down without notifying the interactor manager
+     */
     @Subscribe
     private void handleShutdownCommand(ShutdownCommand message) {
         shutdown();
     }
 
+    /**
+     * Disconnects current user, notifies the interaction manager and shuts down
+     */
     @Subscribe
     private void handleDisconnectRequest(DisconnectRequest message) {
         shutdown();
         interactorManager.post(message);
     }
 
+    /**
+     * Asks the interaction manager to return a user list
+     */
     @Subscribe
     private void handleListUsersRequest(ListUsersRequest message) {
         sendToManager(message);
     }
 
+    /**
+     * Asks the interaction manager to send a message to some user
+     */
     @Subscribe
     private void handleSendMsgRequest(SendMsgRequest message) {
         sendToManager(message);
     }
 
+    /**
+     * Asks the interaction manager to send a "message sent" ack to some user
+     */
     @Subscribe
     private void handleMsgSentRequest(MsgSentRequest message) {
         sendToManager(message);
     }
 
+    /**
+     * Sends "message sent" acknowledgement to the current user
+     */
     @Subscribe
     private void sendMsgSentMessage(MsgSentOutMessage message) {
         sendMessageToClient(Message.MessageType.MESSAGE_SENT, message);
     }
 
+    /**
+     * Sends the received user list to the user
+     */
     @Subscribe
     private void sendUserListMessage(UserListOutMessage message) {
         sendMessageToClient(Message.MessageType.USER_LIST, message);
     }
 
+    /**
+     * Sends an acknowledgement to the newly connected user
+     */
     @Subscribe
     private void sendConnectMessage(ConnectionResultOutMessage message) {
         sendMessageToClient(Message.MessageType.CONNECTION_RESULT, message);
     }
 
+    /**
+     * Sends a message to the current user
+     */
     @Subscribe
     private void sendNewMessage(NewMsgOutMessage message) {
         CompletableFuture<Void> future = sendMessageToClient(Message.MessageType.NEW_MESSAGE, message);

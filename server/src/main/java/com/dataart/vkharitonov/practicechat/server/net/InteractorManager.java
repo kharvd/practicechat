@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  * Handles following messages:
  * <ul>
  * <li>{@link ConnectionEvent} - registers a new user. Doesn't reply.</li>
- * <li>{@link ListUsersRequest} - replies to with {@link UserListOutMessage},
+ * <li>{@link ListUsersRequest} - replies with {@link UserListOutMessage},
  * containing the list of currently connected users.</li>
  * <li>{@link SendMsgRequest} - sends a message to the user</li>
  * <li>{@link MsgSentRequest} - sends a "message sent" acknowledgement to the user</li>
@@ -56,6 +56,9 @@ public final class InteractorManager implements EventListener {
         eventQueue.post(event);
     }
 
+    /**
+     * Sends a "message sent" acknowledgement to the user
+     */
     @Subscribe
     private void handleMessageSentRequest(MsgSentRequest message) {
         String messageSender = message.getMessageSender();
@@ -68,6 +71,9 @@ public final class InteractorManager implements EventListener {
         getMsgDao().removeOldestMessage(destination);
     }
 
+    /**
+     * Sends a message to the user
+     */
     @Subscribe
     private void handleSendMessageRequest(SendMsgRequest message) {
         SendMsgInMessage sendMessage = message.getMessage();
@@ -92,12 +98,18 @@ public final class InteractorManager implements EventListener {
         }
     }
 
+    /**
+     * Unregisters a user
+     */
     @Subscribe
     private void handleDisconnectRequest(DisconnectRequest message) {
         clients.remove(message.getSender());
         log.info("User " + message.getSender() + " has disconnected");
     }
 
+    /**
+     * Replies with {@link UserListOutMessage} containing the list of currently connected users
+     */
     @Subscribe
     private void handleListUsersRequest(ListUsersRequest message) {
         ClientInteractor clientInteractor = clients.get(message.getSender());
@@ -106,6 +118,9 @@ public final class InteractorManager implements EventListener {
         }
     }
 
+    /**
+     * Registers a new user
+     */
     @Subscribe
     private void handleConnectionEvent(ConnectionEvent message) {
         String username = message.getConnectMessage().getUsername();
@@ -122,12 +137,11 @@ public final class InteractorManager implements EventListener {
         }
     }
 
+    /**
+     * Shuts the manager down, disconnecting all users
+     */
     @Subscribe
     private void handleShutdownCommand(ShutdownCommand shutdownCommand) {
-        shutdown();
-    }
-
-    private void shutdown() {
         for (ClientInteractor clientInteractor : clients.values()) {
             clientInteractor.post(new ShutdownCommand());
         }
@@ -152,16 +166,18 @@ public final class InteractorManager implements EventListener {
     }
 
     private void sendNonDeliveredMsgs(String username) {
-        getMsgDao().getUndeliveredMsgsForUser(username).thenApply(undeliveredMsgs -> {
-            undeliveredMsgs.forEach(sendMsgRequest -> {
-                SendMsgInMessage sendMessage = sendMsgRequest.getMessage();
-                String sender = sendMsgRequest.getSender();
-                clients.get(username).post(new NewMsgOutMessage(sender, sendMessage.getMessage(), clients.containsKey(sender),
-                        sendMsgRequest.getTimestamp()));
-            });
+        getMsgDao().getUndeliveredMsgsForUser(username)
+                   .thenApply(undeliveredMsgs -> {
+                       undeliveredMsgs.forEach(sendMsgRequest -> {
+                           SendMsgInMessage sendMessage = sendMsgRequest.getMessage();
+                           String sender = sendMsgRequest.getSender();
+                           clients.get(username)
+                                  .post(new NewMsgOutMessage(sender, sendMessage.getMessage(), clients.containsKey(sender),
+                                          sendMsgRequest.getTimestamp()));
+                       });
 
-            return null;
-        });
+                       return null;
+                   });
     }
 
     /**
