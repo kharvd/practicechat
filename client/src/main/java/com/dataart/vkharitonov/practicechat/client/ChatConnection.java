@@ -4,20 +4,21 @@ import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.common.util.MessageProducer;
 import org.apache.commons.net.io.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.logging.Logger;
 
 /**
  * Manages client's connection to the server
  */
 public class ChatConnection {
 
-    private final static Logger log = Logger.getLogger(ChatConnection.class.getName());
+    private final static Logger log = LoggerFactory.getLogger(ChatConnection.class.getName());
 
     private Socket socket;
     private PrintWriter writer;
@@ -60,7 +61,7 @@ public class ChatConnection {
                 sendMessage(Message.MessageType.DISCONNECT, null);
             }
         } catch (IOException e) {
-            log.info("Couldn't send disconnect message");
+            log.warn("Couldn't send disconnect message");
         } finally {
             close();
         }

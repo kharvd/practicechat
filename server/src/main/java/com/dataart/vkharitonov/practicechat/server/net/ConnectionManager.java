@@ -8,6 +8,8 @@ import com.dataart.vkharitonov.practicechat.server.request.ConnectionEvent;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import org.apache.commons.net.io.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -18,15 +20,13 @@ import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Accepts connection requests from clients and redirects them to the message listener.
  */
 public final class ConnectionManager {
 
-    private final static Logger log = Logger.getLogger(ConnectionManager.class.getName());
+    private final static Logger log = LoggerFactory.getLogger(ConnectionManager.class.getName());
     private final static int MAX_CONNECTION_POOL = 10;
     private final static int CONNECT_MESSAGE_TIMEOUT = 1000;
     private ServerSocket server;
@@ -72,7 +72,7 @@ public final class ConnectionManager {
                 } catch (SocketException e) {
                     log.info("Server socket was stopped");
                 } catch (IOException e) {
-                    log.log(Level.WARNING, e, () -> "IOException in WorkerThread");
+                    log.error("IOException in ConnectionManager", e);
                 }
             }
         }
@@ -90,7 +90,8 @@ public final class ConnectionManager {
                     throw new JsonSyntaxException("First message should be `connect`");
                 }
             } catch (IOException | JsonSyntaxException e) {
-                log.log(Level.INFO, client.getInetAddress().toString() + " " + e.getMessage());
+                log.info("{}: {}", client.getInetAddress()
+                                         .toString(), e.getMessage());
                 Util.closeQuietly(client);
             }
         }

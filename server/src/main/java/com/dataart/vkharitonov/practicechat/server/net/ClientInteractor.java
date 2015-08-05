@@ -8,6 +8,8 @@ import com.dataart.vkharitonov.practicechat.server.queue.EventQueue;
 import com.dataart.vkharitonov.practicechat.server.queue.Subscribe;
 import com.dataart.vkharitonov.practicechat.server.request.*;
 import org.apache.commons.net.io.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -17,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 
 /**
  * Interacts with the clients.
@@ -39,7 +40,8 @@ import java.util.logging.Logger;
  */
 public final class ClientInteractor implements EventListener {
 
-    private final static Logger log = Logger.getLogger(ClientInteractor.class.getName());
+    private final static Logger log = LoggerFactory.getLogger(ClientInteractor.class.getName());
+
 
     private PrintWriter writer;
     private String username;
@@ -149,7 +151,7 @@ public final class ClientInteractor implements EventListener {
         CompletableFuture<Void> future = sendMessageToClient(Message.MessageType.NEW_MESSAGE, message);
         future.thenRun(() -> eventQueue.post(new MsgSentRequest(username, message.getUsername())))
               .exceptionally(e -> {
-                  log.info("Failed to send message to " + username + ": " + e.getLocalizedMessage());
+                  log.warn("Failed to send message to {}: {}", username, e.getLocalizedMessage());
                   return null;
               });
     }
@@ -187,7 +189,7 @@ public final class ClientInteractor implements EventListener {
     private class MessageConsumer implements MessageProducer.Consumer {
         @Override
         public void onNext(Message message) {
-            log.info("Received message from " + username + ": " + message);
+            log.info("Received message from {}: {}", username, message);
 
             if (message.getMessageType() != null) {
                 switch (message.getMessageType()) {
@@ -202,7 +204,7 @@ public final class ClientInteractor implements EventListener {
                         eventQueue.post(new SendMsgRequest(username, msg));
                         break;
                     default:
-                        log.info("Unexpected message from " + username);
+                        log.warn("Unexpected message from {}", username);
                         break;
                 }
             }
@@ -210,7 +212,7 @@ public final class ClientInteractor implements EventListener {
 
         @Override
         public void onError(Throwable e) {
-            log.info("Error reading from user " + username + ": " + e.getLocalizedMessage());
+            log.info("Error reading from user {}: {}", username, e.getLocalizedMessage());
             if (eventQueue.isRunning()) {
                 eventQueue.post(new DisconnectRequest(username));
             }

@@ -1,12 +1,13 @@
 package com.dataart.vkharitonov.practicechat.server.queue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,7 +21,7 @@ import java.util.stream.Stream;
  */
 public class EventQueue implements EventListener {
 
-    private final static Logger log = Logger.getLogger(EventQueue.class.getName());
+    private final static Logger log = LoggerFactory.getLogger(EventQueue.class.getName());
 
     private BlockingQueue<Object> eventQueue = new LinkedBlockingQueue<>();
     private WorkerThread workerThread;
@@ -61,14 +62,14 @@ public class EventQueue implements EventListener {
         if (isRunning()) {
             eventQueue.add(event);
         } else {
-            log.warning("Posting to stopped queue");
+            log.warn("Posting to stopped queue");
         }
     }
 
     private void handleEvent(Object message) {
         Class<?> messageType = message.getClass();
         if (eventHandler == null) {
-            log.warning("Event of type " + messageType + " was not handled: handler is null");
+            log.warn("Event of type {} was not handled: handler is null", messageType);
             return;
         }
 
@@ -82,12 +83,12 @@ public class EventQueue implements EventListener {
                                            .collect(Collectors.toList());
 
         if (methodsToCall.isEmpty()) {
-            log.warning("Event of type " + messageType + " was not handled by " + handlerClass + " object.");
+            log.warn("Event of type {} was not handled by object of class {}", messageType, handlerClass);
             return;
         }
 
         if (methodsToCall.size() > 1) {
-            log.warning("Multiple handlers for event type " + messageType + " in class " + handlerClass);
+            log.warn("Multiple handlers for event type {} in class {}", messageType, handlerClass);
         }
 
         methodsToCall.forEach(method -> {
@@ -95,9 +96,9 @@ public class EventQueue implements EventListener {
                 method.setAccessible(true);
                 method.invoke(eventHandler, message);
             } catch (IllegalAccessException e) {
-                log.log(Level.WARNING, "Couldn't invoke event handler", e);
+                log.error("Couldn't invoke event handler", e);
             } catch (InvocationTargetException e) {
-                log.log(Level.SEVERE, "Exception in event handler", e.getCause());
+                log.error("Exception in event handler", e.getCause());
             }
         });
     }

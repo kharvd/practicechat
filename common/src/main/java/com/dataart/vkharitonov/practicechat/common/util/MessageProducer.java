@@ -66,6 +66,7 @@ public final class MessageProducer {
     }
 
     private class ReadThread extends Thread {
+
         private InputStream inputStream;
         private Consumer consumer;
 

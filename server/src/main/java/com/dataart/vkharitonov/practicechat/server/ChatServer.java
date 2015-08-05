@@ -4,15 +4,16 @@ import com.dataart.vkharitonov.practicechat.server.db.DbHelper;
 import com.dataart.vkharitonov.practicechat.server.net.ConnectionManager;
 import com.dataart.vkharitonov.practicechat.server.net.InteractorManager;
 import com.dataart.vkharitonov.practicechat.server.request.ShutdownCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ChatServer {
 
-    private final static Logger log = Logger.getLogger(ChatServer.class.getName());
+    private final static Logger log = LoggerFactory.getLogger(ChatServer.class.getName());
 
     private final int port;
     private final String dbServerName;

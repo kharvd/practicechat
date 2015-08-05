@@ -9,6 +9,8 @@ import com.dataart.vkharitonov.practicechat.server.queue.EventQueue;
 import com.dataart.vkharitonov.practicechat.server.queue.Subscribe;
 import com.dataart.vkharitonov.practicechat.server.request.*;
 import org.apache.commons.net.io.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -19,8 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Maintains a list of connected clients. Passes messages between users.
@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  */
 public final class InteractorManager implements EventListener {
 
-    private final static Logger log = Logger.getLogger(InteractorManager.class.getName());
+    private final static Logger log = LoggerFactory.getLogger(InteractorManager.class.getName());
     private static final int CONNECTION_FAILURE_TIMEOUT = 1000;
 
     private Map<String, ClientInteractor> clients = new HashMap<>();
@@ -78,7 +78,7 @@ public final class InteractorManager implements EventListener {
     private void handleSendMessageRequest(SendMsgRequest message) {
         SendMsgInMessage sendMessage = message.getMessage();
         if (sendMessage == null) {
-            log.warning("Null message from user " + message.getSender());
+            log.warn("Null message from user {}", message.getSender());
             return;
         }
 
@@ -86,7 +86,7 @@ public final class InteractorManager implements EventListener {
         String sender = message.getSender();
 
         if (destination == null) {
-            log.warning("Destination user can't be null in message sent by " + sender);
+            log.warn("Destination user can't be null in message sent by {}", sender);
             return;
         }
 
@@ -104,7 +104,7 @@ public final class InteractorManager implements EventListener {
     @Subscribe
     private void handleDisconnectRequest(DisconnectRequest message) {
         clients.remove(message.getSender());
-        log.info("User " + message.getSender() + " has disconnected");
+        log.info("User {} has disconnected", message.getSender());
     }
 
     /**
@@ -127,10 +127,10 @@ public final class InteractorManager implements EventListener {
         Socket client = message.getClient();
 
         if (username == null) {
-            log.info("Username can't be null");
+            log.info("Username can't be null from {}", client.getInetAddress());
             writeToClientExecutor.submit(() -> sendConnectionFailure(client));
         } else if (clients.containsKey(username)) {
-            log.info("User " + username + " is already connected");
+            log.info("User {} is already connected", username);
             writeToClientExecutor.submit(() -> sendConnectionFailure(client));
         } else {
             connectUser(username, client);
@@ -158,9 +158,9 @@ public final class InteractorManager implements EventListener {
             clients.put(username, clientInteractor);
 
             sendNonDeliveredMsgs(username);
-            log.info("User " + username + " has connected");
+            log.info("User {} has connected", username);
         } catch (IOException e) {
-            log.warning("Could not read from client " + client.getInetAddress());
+            log.warn("Could not read from client {}", client.getInetAddress());
             Util.closeQuietly(client);
         }
     }
@@ -191,7 +191,7 @@ public final class InteractorManager implements EventListener {
             clientSocket.setSoTimeout(CONNECTION_FAILURE_TIMEOUT);
             out.println(message);
         } catch (IOException e) {
-            log.log(Level.WARNING, e.getMessage());
+            log.info("Could not send connection failure to the user: {}", e.getMessage());
         }
     }
 

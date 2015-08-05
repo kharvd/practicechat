@@ -4,6 +4,8 @@ import com.dataart.vkharitonov.practicechat.server.request.SendMsgRequest;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -12,13 +14,11 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class UndeliveredMsgDao {
 
-    private final static Logger log = Logger.getLogger(UndeliveredMsgDao.class.getName());
+    private final static Logger log = LoggerFactory.getLogger(UndeliveredMsgDao.class.getName());
 
     private DataSource dataSource;
     private QueryRunner run;
@@ -38,21 +38,21 @@ public class UndeliveredMsgDao {
 
     public CompletableFuture<List<SendMsgRequest>> getUndeliveredMsgsForUser(String username) {
         return CompletableFuture.supplyAsync(() -> getUndeliveredMsgsForUserSync(username), dbExecutor).exceptionally(e -> {
-            log.log(Level.WARNING, "Error fetching messages from db", e);
+            log.error("Error fetching messages from db", e);
             return null;
         });
     }
 
     public CompletableFuture<Void> addUndeliveredMsg(SendMsgRequest request) {
         return CompletableFuture.runAsync(() -> addUndeliveredMsgSync(request), dbExecutor).exceptionally(e -> {
-            log.log(Level.WARNING, "Error inserting message to db", e);
+            log.error("Error inserting message to db", e);
             return null;
         });
     }
 
     public CompletableFuture<Void> removeOldestMessage(String username) {
         return CompletableFuture.runAsync(() -> removeOldestMessageSync(username), dbExecutor).exceptionally(e -> {
-            log.log(Level.WARNING, "Error removing message from db", e);
+            log.error("Error removing message from db", e);
             return null;
         });
     }

@@ -1,17 +1,18 @@
 package com.dataart.vkharitonov.practicechat.server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Main {
 
-    private final static Logger log = Logger.getLogger(Main.class.getName());
+    private final static Logger log = LoggerFactory.getLogger(Main.class.getName());
 
     public static void main(String[] args) {
         if (args.length < 1) {
@@ -27,7 +28,7 @@ public class Main {
         try {
             server.start();
         } catch (IOException e) {
-            log.log(Level.SEVERE, e, () -> "Couldn't start the server");
+            log.error("Couldn't start the server", e);
             server.stop();
             return;
         }
@@ -40,7 +41,7 @@ public class Main {
 
             server.stop();
         } catch (IOException e) {
-            log.warning("Couldn't read from System.in");
+            log.warn("Couldn't read from System.in");
         }
     }
 
