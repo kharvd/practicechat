@@ -4,6 +4,9 @@ import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.server.db.DbHelper;
 import com.dataart.vkharitonov.practicechat.server.db.UndeliveredMsgDao;
+import com.dataart.vkharitonov.practicechat.server.queue.EventListener;
+import com.dataart.vkharitonov.practicechat.server.queue.EventQueue;
+import com.dataart.vkharitonov.practicechat.server.queue.Subscribe;
 import com.dataart.vkharitonov.practicechat.server.request.*;
 import org.apache.commons.net.io.Util;
 
@@ -33,36 +36,27 @@ import java.util.logging.Logger;
  * <li>{@link ShutdownCommand} - shuts the manager down</li>
  * </ul>
  */
-public final class InteractorManager implements MessageListener {
+public final class InteractorManager implements EventListener {
 
     private final static Logger log = Logger.getLogger(InteractorManager.class.getName());
     private static final int CONNECTION_FAILURE_TIMEOUT = 1000;
 
     private Map<String, ClientInteractor> clients = new HashMap<>();
     private ExecutorService writeToClientExecutor;
-    private MessageQueue messageQueue;
+    private EventQueue eventQueue;
 
     public InteractorManager() {
         writeToClientExecutor = Executors.newCachedThreadPool();
-        messageQueue = new ManagerMessageQueue();
-        messageQueue.start();
+        eventQueue = new EventQueue();
+        eventQueue.start(this);
     }
 
     @Override
-    public void post(Object message) {
-        messageQueue.post(message);
+    public void post(Object event) {
+        eventQueue.post(event);
     }
 
-    private void shutdown() {
-        for (ClientInteractor clientInteractor : clients.values()) {
-            clientInteractor.post(new ShutdownCommand());
-        }
-
-        clients.clear();
-        messageQueue.stop();
-        writeToClientExecutor.shutdown();
-    }
-
+    @Subscribe
     private void handleMessageSentRequest(MsgSentRequest message) {
         String messageSender = message.getMessageSender();
         String destination = message.getSender();
@@ -74,6 +68,7 @@ public final class InteractorManager implements MessageListener {
         getMsgDao().removeOldestMessage(destination);
     }
 
+    @Subscribe
     private void handleSendMessageRequest(SendMsgRequest message) {
         SendMsgInMessage sendMessage = message.getMessage();
         if (sendMessage == null) {
@@ -97,11 +92,13 @@ public final class InteractorManager implements MessageListener {
         }
     }
 
+    @Subscribe
     private void handleDisconnectRequest(DisconnectRequest message) {
         clients.remove(message.getSender());
         log.info("User " + message.getSender() + " has disconnected");
     }
 
+    @Subscribe
     private void handleListUsersRequest(ListUsersRequest message) {
         ClientInteractor clientInteractor = clients.get(message.getSender());
         if (clientInteractor != null) {
@@ -109,7 +106,8 @@ public final class InteractorManager implements MessageListener {
         }
     }
 
-    private void handleConnectionRequest(ConnectionEvent message) {
+    @Subscribe
+    private void handleConnectionEvent(ConnectionEvent message) {
         String username = message.getConnectMessage().getUsername();
         Socket client = message.getClient();
 
@@ -122,6 +120,21 @@ public final class InteractorManager implements MessageListener {
         } else {
             connectUser(username, client);
         }
+    }
+
+    @Subscribe
+    private void handleShutdownCommand(ShutdownCommand shutdownCommand) {
+        shutdown();
+    }
+
+    private void shutdown() {
+        for (ClientInteractor clientInteractor : clients.values()) {
+            clientInteractor.post(new ShutdownCommand());
+        }
+
+        clients.clear();
+        eventQueue.stop();
+        writeToClientExecutor.shutdown();
     }
 
     private void connectUser(String username, Socket client) {
@@ -168,30 +181,5 @@ public final class InteractorManager implements MessageListener {
 
     private UndeliveredMsgDao getMsgDao() {
         return DbHelper.getInstance().getMsgDao();
-    }
-
-    private class ManagerMessageQueue extends MessageQueue {
-        @Override
-        protected void handleMessage(Object message) {
-            if (message instanceof ConnectionEvent) {
-                handleConnectionRequest((ConnectionEvent) message);
-            } else if (message instanceof ListUsersRequest) {
-                handleListUsersRequest((ListUsersRequest) message);
-            } else if (message instanceof SendMsgRequest) {
-                handleSendMessageRequest((SendMsgRequest) message);
-            } else if (message instanceof MsgSentRequest) {
-                handleMessageSentRequest((MsgSentRequest) message);
-            } else if (message instanceof DisconnectRequest) {
-                handleDisconnectRequest((DisconnectRequest) message);
-            } else if (message instanceof ShutdownCommand) {
-                shutdown();
-            }
-        }
-
-        @Override
-        protected void handleError(Throwable e) {
-            log.log(Level.SEVERE, e, () -> "Exception during message handling in " +
-                    InteractorManager.this + ". Shutting down the server");
-        }
     }
 }

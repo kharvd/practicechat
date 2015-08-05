@@ -3,6 +3,9 @@ package com.dataart.vkharitonov.practicechat.server.net;
 import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.common.util.MessageProducer;
+import com.dataart.vkharitonov.practicechat.server.queue.EventListener;
+import com.dataart.vkharitonov.practicechat.server.queue.EventQueue;
+import com.dataart.vkharitonov.practicechat.server.queue.Subscribe;
 import com.dataart.vkharitonov.practicechat.server.request.*;
 import org.apache.commons.net.io.Util;
 
@@ -14,7 +17,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -34,7 +36,7 @@ import java.util.logging.Logger;
  * <li>{@link DisconnectRequest} - disconnects current user, notifies the interaction manager and shuts down</li>
  * </ul>
  */
-public final class ClientInteractor implements MessageListener {
+public final class ClientInteractor implements EventListener {
 
     private final static Logger log = Logger.getLogger(ClientInteractor.class.getName());
 
@@ -44,7 +46,7 @@ public final class ClientInteractor implements MessageListener {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private InteractorManager interactorManager;
 
-    private MessageQueue messageQueue;
+    private EventQueue eventQueue;
     private MessageProducer messageProducer;
 
     /**
@@ -61,11 +63,67 @@ public final class ClientInteractor implements MessageListener {
 
         writer = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8), true);
 
-        messageQueue = new ClientMessageQueue();
-        messageQueue.start();
+        eventQueue = new EventQueue();
+        eventQueue.start(this);
 
         messageProducer = new MessageProducer();
         messageProducer.start(clientSocket.getInputStream(), new MessageConsumer());
+    }
+
+    @Override
+    public void post(Object event) {
+        eventQueue.post(event);
+    }
+
+    @Subscribe
+    private void handleShutdownCommand(ShutdownCommand message) {
+        shutdown();
+    }
+
+    @Subscribe
+    private void handleDisconnectRequest(DisconnectRequest message) {
+        shutdown();
+        interactorManager.post(message);
+    }
+
+    @Subscribe
+    private void handleListUsersRequest(ListUsersRequest message) {
+        sendToManager(message);
+    }
+
+    @Subscribe
+    private void handleSendMsgRequest(SendMsgRequest message) {
+        sendToManager(message);
+    }
+
+    @Subscribe
+    private void handleMsgSentRequest(MsgSentRequest message) {
+        sendToManager(message);
+    }
+
+    @Subscribe
+    private void sendMsgSentMessage(MsgSentOutMessage message) {
+        sendMessageToClient(Message.MessageType.MESSAGE_SENT, message);
+    }
+
+    @Subscribe
+    private void sendUserListMessage(UserListOutMessage message) {
+        sendMessageToClient(Message.MessageType.USER_LIST, message);
+    }
+
+    @Subscribe
+    private void sendConnectMessage(ConnectionResultOutMessage message) {
+        sendMessageToClient(Message.MessageType.CONNECTION_RESULT, message);
+    }
+
+    @Subscribe
+    private void sendNewMessage(NewMsgOutMessage message) {
+        CompletableFuture<Void> future = sendMessageToClient(Message.MessageType.NEW_MESSAGE, message);
+        future.thenRun(() -> eventQueue.post(new MsgSentRequest(username, message.getUsername())))
+              .exceptionally(e -> {
+                  log.info("Failed to send message to " + username + ": " + e.getLocalizedMessage());
+                  return null;
+              });
     }
 
     private <T> CompletableFuture<Void> sendMessageToClient(Message.MessageType type, T payload) {
@@ -74,25 +132,11 @@ public final class ClientInteractor implements MessageListener {
         return CompletableFuture.runAsync(() -> writeToClient(json), executor);
     }
 
-    private void sendNewMessage(NewMsgOutMessage message) {
-        CompletableFuture<Void> future = sendMessageToClient(Message.MessageType.NEW_MESSAGE, message);
-        future.thenRun(() -> messageQueue.post(new MsgSentRequest(username, message.getUsername())))
-                .exceptionally(e -> {
-                    log.info("Failed to send message to " + username + ": " + e.getLocalizedMessage());
-                    return null;
-                });
-    }
-
-    private void handleDisconnectRequest(DisconnectRequest message) {
-        shutdown();
-        interactorManager.post(message);
-    }
-
     private void shutdown() {
         executor.shutdown();
         messageProducer.stop();
         closeConnection();
-        messageQueue.stop();
+        eventQueue.stop();
     }
 
     private void sendToManager(Object message) {
@@ -112,40 +156,6 @@ public final class ClientInteractor implements MessageListener {
         }
     }
 
-    @Override
-    public void post(Object message) {
-        messageQueue.post(message);
-    }
-
-    private class ClientMessageQueue extends MessageQueue {
-        @Override
-        protected void handleMessage(Object message) {
-            if (message instanceof ConnectionResultOutMessage) {
-                sendMessageToClient(Message.MessageType.CONNECTION_RESULT, message);
-            } else if (message instanceof UserListOutMessage) {
-                sendMessageToClient(Message.MessageType.USER_LIST, message);
-            } else if (message instanceof NewMsgOutMessage) {
-                sendNewMessage((NewMsgOutMessage) message);
-            } else if (message instanceof MsgSentOutMessage) {
-                sendMessageToClient(Message.MessageType.MESSAGE_SENT, message);
-            } else if (message instanceof ListUsersRequest ||
-                    message instanceof SendMsgRequest ||
-                    message instanceof MsgSentRequest) {
-                sendToManager(message);
-            } else if (message instanceof DisconnectRequest) {
-                handleDisconnectRequest((DisconnectRequest) message);
-            } else if (message instanceof ShutdownCommand) {
-                shutdown();
-            }
-        }
-
-        @Override
-        protected void handleError(Throwable e) {
-            log.log(Level.SEVERE, e, () -> "Exception during message handling in " +
-                    ClientInteractor.this + ". Shutting down the server");
-        }
-    }
-
     private class MessageConsumer implements MessageProducer.Consumer {
         @Override
         public void onNext(Message message) {
@@ -154,14 +164,14 @@ public final class ClientInteractor implements MessageListener {
             if (message.getMessageType() != null) {
                 switch (message.getMessageType()) {
                     case LIST_USERS:
-                        messageQueue.post(new ListUsersRequest(username));
+                        eventQueue.post(new ListUsersRequest(username));
                         break;
                     case DISCONNECT:
                         messageProducer.stop();
                         break;
                     case SEND_MESSAGE:
                         SendMsgInMessage msg = JsonUtils.GSON.fromJson(message.getPayload(), SendMsgInMessage.class);
-                        messageQueue.post(new SendMsgRequest(username, msg));
+                        eventQueue.post(new SendMsgRequest(username, msg));
                         break;
                     default:
                         log.info("Unexpected message from " + username);
@@ -173,14 +183,14 @@ public final class ClientInteractor implements MessageListener {
         @Override
         public void onError(Throwable e) {
             log.info("Error reading from user " + username + ": " + e.getLocalizedMessage());
-            if (messageQueue.isRunning()) {
-                messageQueue.post(new DisconnectRequest(username));
+            if (eventQueue.isRunning()) {
+                eventQueue.post(new DisconnectRequest(username));
             }
         }
 
         @Override
         public void onCompleted() {
-            messageQueue.post(new DisconnectRequest(username));
+            eventQueue.post(new DisconnectRequest(username));
         }
     }
 }

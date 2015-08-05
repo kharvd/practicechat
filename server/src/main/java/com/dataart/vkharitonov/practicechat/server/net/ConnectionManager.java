@@ -3,6 +3,7 @@ package com.dataart.vkharitonov.practicechat.server.net;
 import com.dataart.vkharitonov.practicechat.common.json.ConnectInMessage;
 import com.dataart.vkharitonov.practicechat.common.json.Message;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
+import com.dataart.vkharitonov.practicechat.server.queue.EventListener;
 import com.dataart.vkharitonov.practicechat.server.request.ConnectionEvent;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
@@ -29,7 +30,7 @@ public final class ConnectionManager {
     private final static int MAX_CONNECTION_POOL = 10;
     private final static int CONNECT_MESSAGE_TIMEOUT = 1000;
     private ServerSocket server;
-    private MessageListener connectionListener;
+    private EventListener connectionListener;
     private ExecutorService executor;
     private WorkerThread workerThread;
 
@@ -40,7 +41,7 @@ public final class ConnectionManager {
      * @param connectionListener must handle {@link ConnectionEvent} messages
      * @throws IOException thrown if couldn't create server socket
      */
-    public void start(int port, MessageListener connectionListener) throws IOException {
+    public void start(int port, EventListener connectionListener) throws IOException {
         server = new ServerSocket(port);
 
         this.connectionListener = connectionListener;
