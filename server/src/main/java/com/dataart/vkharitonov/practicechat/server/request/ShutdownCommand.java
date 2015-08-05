@@ -1,4 +1,4 @@
 package com.dataart.vkharitonov.practicechat.server.request;
 
-public class ShutdownRequest {
+public class ShutdownCommand {
 }

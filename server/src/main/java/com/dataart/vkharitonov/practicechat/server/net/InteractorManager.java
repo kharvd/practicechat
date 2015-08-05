@@ -24,13 +24,13 @@ import java.util.logging.Logger;
  * <p>
  * Handles following messages:
  * <ul>
- * <li>{@link ConnectionRequest} - registers a new user. Doesn't reply.</li>
+ * <li>{@link ConnectionEvent} - registers a new user. Doesn't reply.</li>
  * <li>{@link ListUsersRequest} - replies to with {@link UserListOutMessage},
  * containing the list of currently connected users.</li>
  * <li>{@link SendMsgRequest} - sends a message to the user</li>
  * <li>{@link MsgSentRequest} - sends a "message sent" acknowledgement to the user</li>
  * <li>{@link DisconnectRequest} - unregisters a user. Doesn't reply</li>
- * <li>{@link ShutdownRequest} - shuts the manager down</li>
+ * <li>{@link ShutdownCommand} - shuts the manager down</li>
  * </ul>
  */
 public final class InteractorManager implements MessageListener {
@@ -55,7 +55,7 @@ public final class InteractorManager implements MessageListener {
 
     private void shutdown() {
         for (ClientInteractor clientInteractor : clients.values()) {
-            clientInteractor.post(new ShutdownRequest());
+            clientInteractor.post(new ShutdownCommand());
         }
 
         clients.clear();
@@ -109,7 +109,7 @@ public final class InteractorManager implements MessageListener {
         }
     }
 
-    private void handleConnectionRequest(ConnectionRequest message) {
+    private void handleConnectionRequest(ConnectionEvent message) {
         String username = message.getConnectMessage().getUsername();
         Socket client = message.getClient();
 
@@ -173,8 +173,8 @@ public final class InteractorManager implements MessageListener {
     private class ManagerMessageQueue extends MessageQueue {
         @Override
         protected void handleMessage(Object message) {
-            if (message instanceof ConnectionRequest) {
-                handleConnectionRequest((ConnectionRequest) message);
+            if (message instanceof ConnectionEvent) {
+                handleConnectionRequest((ConnectionEvent) message);
             } else if (message instanceof ListUsersRequest) {
                 handleListUsersRequest((ListUsersRequest) message);
             } else if (message instanceof SendMsgRequest) {
@@ -183,7 +183,7 @@ public final class InteractorManager implements MessageListener {
                 handleMessageSentRequest((MsgSentRequest) message);
             } else if (message instanceof DisconnectRequest) {
                 handleDisconnectRequest((DisconnectRequest) message);
-            } else if (message instanceof ShutdownRequest) {
+            } else if (message instanceof ShutdownCommand) {
                 shutdown();
             }
         }

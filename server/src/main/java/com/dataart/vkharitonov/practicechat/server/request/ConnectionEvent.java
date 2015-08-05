@@ -7,12 +7,12 @@ import java.net.Socket;
 /**
  * A request to register a new user
  */
-public class ConnectionRequest {
+public class ConnectionEvent {
 
     private ConnectInMessage connectMessage;
     private Socket client;
 
-    public ConnectionRequest(ConnectInMessage connectMessage, Socket client) {
+    public ConnectionEvent(ConnectInMessage connectMessage, Socket client) {
         this.connectMessage = connectMessage;
         this.client = client;
     }

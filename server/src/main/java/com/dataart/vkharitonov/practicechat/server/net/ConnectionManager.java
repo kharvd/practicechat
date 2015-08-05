@@ -3,7 +3,7 @@ package com.dataart.vkharitonov.practicechat.server.net;
 import com.dataart.vkharitonov.practicechat.common.json.ConnectInMessage;
 import com.dataart.vkharitonov.practicechat.common.json.Message;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
-import com.dataart.vkharitonov.practicechat.server.request.ConnectionRequest;
+import com.dataart.vkharitonov.practicechat.server.request.ConnectionEvent;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import org.apache.commons.net.io.Util;
@@ -37,7 +37,7 @@ public final class ConnectionManager {
      * Starts listening to incoming client connections.
      *
      * @param port               the port number
-     * @param connectionListener must handle {@link ConnectionRequest} messages
+     * @param connectionListener must handle {@link ConnectionEvent} messages
      * @throws IOException thrown if couldn't create server socket
      */
     public void start(int port, MessageListener connectionListener) throws IOException {
@@ -82,7 +82,7 @@ public final class ConnectionManager {
 
                 if (message.getMessageType() == Message.MessageType.CONNECT) {
                     ConnectInMessage connectMessage = JsonUtils.GSON.fromJson(message.getPayload(), ConnectInMessage.class);
-                    connectionListener.post(new ConnectionRequest(connectMessage, client));
+                    connectionListener.post(new ConnectionEvent(connectMessage, client));
                 } else {
                     throw new JsonSyntaxException("First message should be `connect`");
                 }

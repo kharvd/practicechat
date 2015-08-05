@@ -134,7 +134,7 @@ public final class ClientInteractor implements MessageListener {
                 sendToManager(message);
             } else if (message instanceof DisconnectRequest) {
                 handleDisconnectRequest((DisconnectRequest) message);
-            } else if (message instanceof ShutdownRequest) {
+            } else if (message instanceof ShutdownCommand) {
                 shutdown();
             }
         }

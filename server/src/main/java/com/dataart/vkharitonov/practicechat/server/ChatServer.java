@@ -3,7 +3,7 @@ package com.dataart.vkharitonov.practicechat.server;
 import com.dataart.vkharitonov.practicechat.server.db.DbHelper;
 import com.dataart.vkharitonov.practicechat.server.net.ConnectionManager;
 import com.dataart.vkharitonov.practicechat.server.net.InteractorManager;
-import com.dataart.vkharitonov.practicechat.server.request.ShutdownRequest;
+import com.dataart.vkharitonov.practicechat.server.request.ShutdownCommand;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -43,7 +43,7 @@ public class ChatServer {
 
     public void stop() {
         connectionManager.stop();
-        interactorManager.post(new ShutdownRequest());
+        interactorManager.post(new ShutdownCommand());
         DbHelper.close();
     }
 
