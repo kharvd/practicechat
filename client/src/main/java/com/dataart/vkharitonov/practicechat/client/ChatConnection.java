@@ -147,6 +147,7 @@ public class ChatConnection {
         @Override
         public void onCompleted() {
             listener.onDisconnect();
+            close();
         }
     }
 }
