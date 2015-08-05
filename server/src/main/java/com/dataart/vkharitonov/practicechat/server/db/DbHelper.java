@@ -9,7 +9,7 @@ public class DbHelper {
 
     private static DbHelper instance;
     private PGPoolingDataSource dataSource;
-    private UndeliveredMsgDao undeliveredMsgDao;
+    private ChatMsgDao chatMsgDao;
 
     private DbHelper(String dbName, String serverName, String username, String password) {
         dataSource = new PGPoolingDataSource();
@@ -37,9 +37,9 @@ public class DbHelper {
         if (instance != null) {
             instance.dataSource.close();
 
-            if (instance.undeliveredMsgDao != null) {
-                instance.undeliveredMsgDao.close();
-                instance.undeliveredMsgDao = null;
+            if (instance.chatMsgDao != null) {
+                instance.chatMsgDao.close();
+                instance.chatMsgDao = null;
             }
         }
     }
@@ -51,15 +51,15 @@ public class DbHelper {
         }
     }
 
-    public UndeliveredMsgDao getMsgDao() {
-        if (undeliveredMsgDao == null) {
+    public ChatMsgDao getMsgDao() {
+        if (chatMsgDao == null) {
             synchronized (DbHelper.class) {
-                if (undeliveredMsgDao == null) {
-                    undeliveredMsgDao = new UndeliveredMsgDao(dataSource);
+                if (chatMsgDao == null) {
+                    chatMsgDao = new ChatMsgDao(dataSource);
                 }
             }
         }
 
-        return undeliveredMsgDao;
+        return chatMsgDao;
     }
 }

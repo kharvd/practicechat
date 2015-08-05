@@ -2,8 +2,8 @@ package com.dataart.vkharitonov.practicechat.server.net;
 
 import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
+import com.dataart.vkharitonov.practicechat.server.db.ChatMsgDao;
 import com.dataart.vkharitonov.practicechat.server.db.DbHelper;
-import com.dataart.vkharitonov.practicechat.server.db.UndeliveredMsgDao;
 import com.dataart.vkharitonov.practicechat.server.event.*;
 import com.dataart.vkharitonov.practicechat.server.queue.EventListener;
 import com.dataart.vkharitonov.practicechat.server.queue.EventQueue;
@@ -68,7 +68,7 @@ public final class InteractorManager implements EventListener {
             senderClient.post(new MsgSentOutMessage(destination));
         }
 
-        getMsgDao().removeOldestMessage(destination);
+        getMsgDao().setOldestMessageDelivered(destination);
     }
 
     /**
@@ -195,7 +195,7 @@ public final class InteractorManager implements EventListener {
         }
     }
 
-    private UndeliveredMsgDao getMsgDao() {
+    private ChatMsgDao getMsgDao() {
         return DbHelper.getInstance().getMsgDao();
     }
 }

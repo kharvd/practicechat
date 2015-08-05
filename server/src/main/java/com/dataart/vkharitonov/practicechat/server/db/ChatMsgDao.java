@@ -16,19 +16,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-public class UndeliveredMsgDao {
+public class ChatMsgDao {
 
-    private final static Logger log = LoggerFactory.getLogger(UndeliveredMsgDao.class.getName());
+    private final static Logger log = LoggerFactory.getLogger(ChatMsgDao.class.getName());
 
     private DataSource dataSource;
     private QueryRunner run;
     private ExecutorService dbExecutor;
-    private ResultSetHandler<List<UndeliveredMsg>> undeliveredMessageHandler;
+    private ResultSetHandler<List<ChatMsg>> undeliveredMessageHandler;
 
-    protected UndeliveredMsgDao(DataSource dataSource) {
+    protected ChatMsgDao(DataSource dataSource) {
         this.dataSource = dataSource;
         dbExecutor = Executors.newSingleThreadExecutor();
-        undeliveredMessageHandler = new BeanListHandler<>(UndeliveredMsg.class);
+        undeliveredMessageHandler = new BeanListHandler<>(ChatMsg.class);
         run = new QueryRunner();
     }
 
@@ -50,8 +50,9 @@ public class UndeliveredMsgDao {
         });
     }
 
-    public CompletableFuture<Void> removeOldestMessage(String username) {
-        return CompletableFuture.runAsync(() -> removeOldestMessageSync(username), dbExecutor).exceptionally(e -> {
+    public CompletableFuture<Void> setOldestMessageDelivered(String username) {
+        return CompletableFuture.runAsync(() -> setOldestMessageDeliveredSync(username), dbExecutor)
+                                .exceptionally(e -> {
             log.error("Error removing message from db", e);
             return null;
         });
@@ -59,13 +60,13 @@ public class UndeliveredMsgDao {
 
     private List<SendMsgRequest> getUndeliveredMsgsForUserSync(String username) {
         try (Connection conn = dataSource.getConnection()) {
-            String query = "SELECT sender, destination, message, sending_time AS sendingTime \n" +
-                    "FROM undelivered_messages \n" +
-                    "WHERE destination = ? \n" +
+            String query = "SELECT sender,destination,message, sending_time AS sendingTime\n" +
+                    "FROM messages\n" +
+                    "WHERE destination = ? AND NOT delivered\n" +
                     "ORDER BY sendingTime;";
 
             return run.query(conn, query, undeliveredMessageHandler, username).stream()
-                    .map(UndeliveredMsg::toSendMsgRequest)
+                      .map(ChatMsg::toSendMsgRequest)
                     .collect(Collectors.toList());
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -74,8 +75,8 @@ public class UndeliveredMsgDao {
 
     private void addUndeliveredMsgSync(SendMsgRequest request) {
         try (Connection conn = dataSource.getConnection()) {
-            String insert = "INSERT INTO undelivered_messages(sender, destination, message, sending_time) \n" +
-                    "VALUES (?, ?, ?, to_timestamp(?));";
+            String insert = "INSERT INTO messages(sender, destination, message, sending_time, delivered) \n" +
+                    "VALUES (?, ?, ?, to_timestamp(?), FALSE);";
             run.insert(conn, insert, undeliveredMessageHandler,
                     request.getSender(),
                     request.getMessage().getUsername(),
@@ -86,15 +87,13 @@ public class UndeliveredMsgDao {
         }
     }
 
-    private void removeOldestMessageSync(String username) {
+    private void setOldestMessageDeliveredSync(String username) {
         try (Connection conn = dataSource.getConnection()) {
-            String sql = "DELETE FROM undelivered_messages \n" +
-                    "WHERE id = (SELECT id \n" +
-                    "            FROM undelivered_messages \n" +
-                    "            WHERE destination = ?\n" +
+            String sql = "UPDATE messages SET delivered = TRUE \n" +
+                    "WHERE id = (SELECT id FROM messages \n" +
+                    "            WHERE destination = ? AND NOT delivered\n" +
                     "            ORDER BY sending_time \n" +
-                    "            LIMIT 1\n" +
-                    "            );";
+                    "            LIMIT 1);";
             run.update(conn, sql, username);
         } catch (SQLException e) {
             throw new RuntimeException(e);

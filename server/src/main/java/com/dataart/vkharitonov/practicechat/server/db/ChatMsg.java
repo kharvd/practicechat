@@ -5,13 +5,14 @@ import com.dataart.vkharitonov.practicechat.server.event.SendMsgRequest;
 
 import java.sql.Timestamp;
 
-public class UndeliveredMsg {
+public class ChatMsg {
     private String sender;
     private String destination;
     private String message;
     private Timestamp sendingTime;
+    private boolean delivered;
 
-    public UndeliveredMsg() {
+    public ChatMsg() {
     }
 
     public String getSender() {
@@ -46,17 +47,26 @@ public class UndeliveredMsg {
         this.sendingTime = new Timestamp(sendingTime.getTime());
     }
 
+    public boolean isDelivered() {
+        return delivered;
+    }
+
+    public void setDelivered(boolean delivered) {
+        this.delivered = delivered;
+    }
+
     public SendMsgRequest toSendMsgRequest() {
         return new SendMsgRequest(sender, sendingTime.getTime(), new SendMsgInMessage(destination, message));
     }
 
     @Override
     public String toString() {
-        return "UndeliveredMsg{" +
+        return "ChatMsg{" +
                 "sender='" + sender + '\'' +
                 ", destination='" + destination + '\'' +
                 ", message='" + message + '\'' +
                 ", sendingTime=" + sendingTime +
+                ", delivered=" + delivered +
                 '}';
     }
 }
