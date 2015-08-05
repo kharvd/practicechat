@@ -3,13 +3,13 @@ package com.dataart.vkharitonov.practicechat.client;
 import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.common.util.MessageProducer;
+import org.apache.commons.net.io.Util;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -46,16 +46,9 @@ public class ChatConnection {
      * Closes connection. No more messages are accepted or sent
      */
     private void close() {
-        try {
-            if (socket != null) {
-                socket.close();
-            }
-        } catch (IOException e) {
-            log.log(Level.WARNING, "Couldn't close socket", e);
-        } finally {
-            socket = null;
-            writer = null;
-        }
+        Util.closeQuietly(socket);
+        socket = null;
+        writer = null;
     }
 
     /**

@@ -4,6 +4,7 @@ import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.common.util.MessageProducer;
 import com.dataart.vkharitonov.practicechat.server.request.*;
+import org.apache.commons.net.io.Util;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -100,11 +101,7 @@ public final class ClientInteractor implements MessageListener {
 
     private void closeConnection() {
         if (!clientSocket.isClosed()) {
-            try {
-                clientSocket.close();
-            } catch (IOException e) {
-                log.warning("Couldn't close socket for user " + username);
-            }
+            Util.closeQuietly(clientSocket);
         }
     }
 

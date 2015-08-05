@@ -6,6 +6,7 @@ import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.server.request.ConnectionRequest;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
+import org.apache.commons.net.io.Util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -56,11 +57,8 @@ public final class ConnectionManager {
     public void stop() {
         if (isRunning) {
             isRunning = false;
-            try {
-                server.close();
-            } catch (IOException e) {
-                log.log(Level.WARNING, e, () -> "Couldn't close server socket");
-            }
+
+            Util.closeQuietly(server);
             executor.shutdown();
         }
     }
@@ -94,11 +92,7 @@ public final class ConnectionManager {
                 }
             } catch (IOException | JsonSyntaxException e) {
                 log.log(Level.INFO, client.getInetAddress().toString() + " " + e.getMessage());
-                try {
-                    client.close();
-                } catch (IOException e1) {
-                    log.log(Level.INFO, client.getInetAddress().toString() + " " + e1.getMessage());
-                }
+                Util.closeQuietly(client);
             }
         }
 

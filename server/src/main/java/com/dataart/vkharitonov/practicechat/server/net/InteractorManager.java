@@ -5,6 +5,7 @@ import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.server.db.DbHelper;
 import com.dataart.vkharitonov.practicechat.server.db.UndeliveredMsgDao;
 import com.dataart.vkharitonov.practicechat.server.request.*;
+import org.apache.commons.net.io.Util;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -133,13 +134,7 @@ public final class InteractorManager implements MessageListener {
             log.info("User " + username + " has connected");
         } catch (IOException e) {
             log.warning("Could not read from client " + client.getInetAddress());
-            if (!client.isClosed()) {
-                try {
-                    client.close();
-                } catch (IOException e1) {
-                    log.warning("Could not close socket " + client.getInetAddress());
-                }
-            }
+            Util.closeQuietly(client);
         }
     }
 
