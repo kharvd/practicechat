@@ -2,11 +2,14 @@ package com.dataart.vkharitonov.practicechat.server.net;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Logger;
 
 /**
  * Maintains a message queue which is processed on a separate thread
  */
 public abstract class MessageQueue implements MessageListener {
+
+    private final static Logger log = Logger.getLogger(MessageQueue.class.getName());
 
     private BlockingQueue<Object> messageQueue = new LinkedBlockingQueue<>();
     private volatile boolean isRunning;
@@ -43,11 +46,11 @@ public abstract class MessageQueue implements MessageListener {
      */
     @Override
     public void post(Object message) {
-        if (!isRunning()) {
-            throw new IllegalStateException("Queue is not running!");
+        if (isRunning()) {
+            messageQueue.add(message);
+        } else {
+            log.warning("Posting to stopped queue");
         }
-
-        messageQueue.add(message);
     }
 
     /**

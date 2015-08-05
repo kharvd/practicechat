@@ -32,6 +32,10 @@ public class UndeliveredMsgDao {
         run = new QueryRunner();
     }
 
+    protected void close() {
+        dbExecutor.shutdown();
+    }
+
     public CompletableFuture<List<SendMsgRequest>> getUndeliveredMsgsForUser(String username) {
         return CompletableFuture.supplyAsync(() -> getUndeliveredMsgsForUserSync(username), dbExecutor).exceptionally(e -> {
             log.log(Level.WARNING, "Error fetching messages from db", e);

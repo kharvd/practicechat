@@ -3,10 +3,7 @@ package com.dataart.vkharitonov.practicechat.server.net;
 import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.common.util.MessageProducer;
-import com.dataart.vkharitonov.practicechat.server.request.DisconnectRequest;
-import com.dataart.vkharitonov.practicechat.server.request.ListUsersRequest;
-import com.dataart.vkharitonov.practicechat.server.request.MsgSentRequest;
-import com.dataart.vkharitonov.practicechat.server.request.SendMsgRequest;
+import com.dataart.vkharitonov.practicechat.server.request.*;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -86,10 +83,15 @@ public final class ClientInteractor implements MessageListener {
     }
 
     private void handleDisconnectRequest(DisconnectRequest message) {
-        messageQueue.stop();
-        executor.shutdown();
-        closeConnection();
+        shutdown();
         interactorManager.post(message);
+    }
+
+    private void shutdown() {
+        executor.shutdown();
+        messageProducer.stop();
+        closeConnection();
+        messageQueue.stop();
     }
 
     private void sendToManager(Object message) {
@@ -135,6 +137,8 @@ public final class ClientInteractor implements MessageListener {
                 sendToManager(message);
             } else if (message instanceof DisconnectRequest) {
                 handleDisconnectRequest((DisconnectRequest) message);
+            } else if (message instanceof ShutdownRequest) {
+                shutdown();
             }
         }
 

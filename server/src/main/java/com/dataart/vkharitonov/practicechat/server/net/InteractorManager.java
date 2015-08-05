@@ -53,6 +53,11 @@ public final class InteractorManager implements MessageListener {
     }
 
     private void shutdown() {
+        for (ClientInteractor clientInteractor : clients.values()) {
+            clientInteractor.post(new ShutdownRequest());
+        }
+
+        clients.clear();
         messageQueue.stop();
         writeToClientExecutor.shutdown();
     }

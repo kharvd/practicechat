@@ -54,21 +54,15 @@ public final class ConnectionManager {
      * Stops listening to connections.
      */
     public void stop() {
-        if (!isRunning) {
-            throw new IllegalStateException("ConnectionManager is not running!");
+        if (isRunning) {
+            isRunning = false;
+            try {
+                server.close();
+            } catch (IOException e) {
+                log.log(Level.WARNING, e, () -> "Couldn't close server socket");
+            }
+            executor.shutdown();
         }
-
-        isRunning = false;
-        try {
-            server.close();
-        } catch (IOException e) {
-            log.log(Level.WARNING, e, () -> "Couldn't close server socket");
-        }
-        executor.shutdown();
-    }
-
-    public boolean isRunning() {
-        return isRunning;
     }
 
     private class WorkerThread extends Thread {

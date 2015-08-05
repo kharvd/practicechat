@@ -36,6 +36,11 @@ public class DbHelper {
     public static void close() {
         if (instance != null) {
             instance.dataSource.close();
+
+            if (instance.undeliveredMsgDao != null) {
+                instance.undeliveredMsgDao.close();
+                instance.undeliveredMsgDao = null;
+            }
         }
     }
 
