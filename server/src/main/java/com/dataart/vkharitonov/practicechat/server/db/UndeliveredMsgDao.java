@@ -1,6 +1,6 @@
 package com.dataart.vkharitonov.practicechat.server.db;
 
-import com.dataart.vkharitonov.practicechat.server.request.SendMsgRequest;
+import com.dataart.vkharitonov.practicechat.server.event.SendMsgRequest;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;

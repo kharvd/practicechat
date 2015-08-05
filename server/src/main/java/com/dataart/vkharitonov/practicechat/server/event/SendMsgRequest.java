@@ -1,4 +1,4 @@
-package com.dataart.vkharitonov.practicechat.server.request;
+package com.dataart.vkharitonov.practicechat.server.event;
 
 import com.dataart.vkharitonov.practicechat.common.json.SendMsgInMessage;
 

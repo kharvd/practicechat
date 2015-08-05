@@ -1,4 +1,4 @@
-package com.dataart.vkharitonov.practicechat.server.request;
+package com.dataart.vkharitonov.practicechat.server.event;
 
 public class ListUsersRequest extends Request {
 

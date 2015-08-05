@@ -1,7 +1,7 @@
 package com.dataart.vkharitonov.practicechat.server.db;
 
 import com.dataart.vkharitonov.practicechat.common.json.SendMsgInMessage;
-import com.dataart.vkharitonov.practicechat.server.request.SendMsgRequest;
+import com.dataart.vkharitonov.practicechat.server.event.SendMsgRequest;
 
 import java.sql.Timestamp;
 

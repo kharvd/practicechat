@@ -1,9 +1,9 @@
 package com.dataart.vkharitonov.practicechat.server;
 
 import com.dataart.vkharitonov.practicechat.server.db.DbHelper;
+import com.dataart.vkharitonov.practicechat.server.event.ShutdownCommand;
 import com.dataart.vkharitonov.practicechat.server.net.ConnectionManager;
 import com.dataart.vkharitonov.practicechat.server.net.InteractorManager;
-import com.dataart.vkharitonov.practicechat.server.request.ShutdownCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
