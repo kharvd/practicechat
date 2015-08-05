@@ -119,6 +119,11 @@ public final class ClientInteractor implements EventListener {
         sendToManager(message);
     }
 
+    @Subscribe
+    private void handleHistoryRequest(HistoryRequest message) {
+        sendToManager(message);
+    }
+
     /**
      * Sends "message sent" acknowledgement to the current user
      */
@@ -154,6 +159,11 @@ public final class ClientInteractor implements EventListener {
                   log.warn("Failed to send message to {}: {}", username, e.getLocalizedMessage());
                   return null;
               });
+    }
+
+    @Subscribe
+    private void sendHistory(MsgHistoryOutMessage message) {
+        sendMessageToClient(Message.MessageType.MESSAGE_HISTORY, message);
     }
 
     private <T> CompletableFuture<Void> sendMessageToClient(Message.MessageType type, T payload) {
@@ -202,6 +212,10 @@ public final class ClientInteractor implements EventListener {
                     case SEND_MESSAGE:
                         SendMsgInMessage msg = JsonUtils.GSON.fromJson(message.getPayload(), SendMsgInMessage.class);
                         eventQueue.post(new SendMsgRequest(username, msg));
+                        break;
+                    case GET_HISTORY:
+                        GetHistoryInMessage getHistoryMessage = JsonUtils.GSON.fromJson(message.getPayload(), GetHistoryInMessage.class);
+                        eventQueue.post(new HistoryRequest(username, getHistoryMessage.getUsername()));
                         break;
                     default:
                         log.warn("Unexpected message from {}", username);

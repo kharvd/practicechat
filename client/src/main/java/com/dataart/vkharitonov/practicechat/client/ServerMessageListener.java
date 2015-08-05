@@ -1,5 +1,7 @@
 package com.dataart.vkharitonov.practicechat.client;
 
+import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
+
 import java.util.List;
 
 /**
@@ -13,6 +15,8 @@ public interface ServerMessageListener {
     void onUserList(List<String> users);
 
     void onNewMessage(String sender, String message, boolean userOnline, long timestamp);
+
+    void onMessageHistory(List<ChatMsg> messages);
 
     /**
      * Server disconnected. No more messages are expected after this point

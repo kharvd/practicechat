@@ -75,6 +75,10 @@ public class ChatConnection {
         sendMessage(Message.MessageType.LIST_USERS, null);
     }
 
+    public void getHistory(String username) throws IOException {
+        sendMessage(Message.MessageType.GET_HISTORY, new GetHistoryInMessage(username));
+    }
+
     /**
      * Sends `send_message` message to the server
      * @param destination user to send this message to
@@ -118,6 +122,11 @@ public class ChatConnection {
         listener.onConnectionResult(payload.isSuccess());
     }
 
+    private void handleMessageHistory(Message message) {
+        MsgHistoryOutMessage msg = JsonUtils.GSON.fromJson(message.getPayload(), MsgHistoryOutMessage.class);
+        listener.onMessageHistory(msg.getMessages());
+    }
+
     private class MessageConsumer implements MessageProducer.Consumer {
         @Override
         public void onNext(Message message) {
@@ -133,6 +142,9 @@ public class ChatConnection {
                     break;
                 case USER_LIST:
                     handleUserList(message);
+                    break;
+                case MESSAGE_HISTORY:
+                    handleMessageHistory(message);
                     break;
                 default:
                     break;

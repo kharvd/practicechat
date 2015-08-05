@@ -45,6 +45,9 @@ public class Message {
         @SerializedName("send_message")
         SEND_MESSAGE,
 
+        @SerializedName("get_history")
+        GET_HISTORY,
+
         // Outgoing messages
 
         @SerializedName("connection_result")
@@ -57,6 +60,9 @@ public class Message {
         NEW_MESSAGE,
 
         @SerializedName("message_sent")
-        MESSAGE_SENT
+        MESSAGE_SENT,
+
+        @SerializedName("message_history")
+        MESSAGE_HISTORY
     }
 }

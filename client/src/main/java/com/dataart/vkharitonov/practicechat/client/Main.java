@@ -2,6 +2,7 @@ package com.dataart.vkharitonov.practicechat.client;
 
 import com.dataart.vkharitonov.practicechat.client.cli.CommandHandler;
 import com.dataart.vkharitonov.practicechat.client.cli.CommandReader;
+import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,7 +25,8 @@ public class Main {
         System.out.println("Available commands: \n" +
                 "    connect <user>@<host>:<port> - connects <user> to <host>:<port>\n" +
                 "    list - lists users currently connected to the server\n" +
-                "    send \"<username>\" \"<message>\" - sends <message> to <username>\n" +
+                "    send <username> \"<message>\" - sends <message> to <username>\n" +
+                "    history <username> - lists message history with user <username>\n" +
                 "    disconnect - disconnects from the server\n" +
                 "    help - show this help message\n" +
                 "    exit - exit the application");
@@ -73,11 +75,22 @@ public class Main {
         @Override
         public void onSendMessage(String username, String message) {
             if (checkConnection()) {
-                System.out.format("Sending message \"%s\" to %s%n", message, username);
                 try {
                     connection.sendMessage(username, message);
                 } catch (IOException e) {
                     System.out.println("Couldn't send message. Disconnecting");
+                    connection.disconnect();
+                }
+            }
+        }
+
+        @Override
+        public void onHistory(String username) {
+            if (checkConnection()) {
+                try {
+                    connection.getHistory(username);
+                } catch (IOException e) {
+                    System.out.println("Couldn't send message to the server. Disconnecting");
                     connection.disconnect();
                 }
             }
@@ -136,6 +149,17 @@ public class Main {
         @Override
         public void onNewMessage(String sender, String message, boolean userOnline, long timestamp) {
             System.out.format("[%tT] %s: %s%n", timestamp, sender, message);
+        }
+
+        @Override
+        public void onMessageHistory(List<ChatMsg> messages) {
+            if (messages.isEmpty()) {
+                System.out.println("History is empty");
+            } else {
+                for (ChatMsg message : messages) {
+                    onNewMessage(message.getSender(), message.getMessage(), false, message.getTimestamp());
+                }
+            }
         }
 
         @Override

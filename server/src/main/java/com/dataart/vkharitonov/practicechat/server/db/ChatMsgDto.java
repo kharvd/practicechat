@@ -1,18 +1,19 @@
 package com.dataart.vkharitonov.practicechat.server.db;
 
+import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
 import com.dataart.vkharitonov.practicechat.common.json.SendMsgInMessage;
 import com.dataart.vkharitonov.practicechat.server.event.SendMsgRequest;
 
 import java.sql.Timestamp;
 
-public class ChatMsg {
+public class ChatMsgDto {
     private String sender;
     private String destination;
     private String message;
     private Timestamp sendingTime;
     private boolean delivered;
 
-    public ChatMsg() {
+    public ChatMsgDto() {
     }
 
     public String getSender() {
@@ -59,9 +60,13 @@ public class ChatMsg {
         return new SendMsgRequest(sender, sendingTime.getTime(), new SendMsgInMessage(destination, message));
     }
 
+    public ChatMsg toChatMsg() {
+        return new ChatMsg(sender, destination, message, sendingTime.getTime());
+    }
+
     @Override
     public String toString() {
-        return "ChatMsg{" +
+        return "ChatMsgDto{" +
                 "sender='" + sender + '\'' +
                 ", destination='" + destination + '\'' +
                 ", message='" + message + '\'' +

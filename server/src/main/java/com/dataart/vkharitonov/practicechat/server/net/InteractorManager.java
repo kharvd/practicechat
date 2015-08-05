@@ -18,6 +18,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -118,12 +119,26 @@ public final class InteractorManager implements EventListener {
         }
     }
 
+    @Subscribe
+    private void handleHistoryRequest(HistoryRequest message) {
+        getMsgDao().getHistoryForUsers(message.getSender(), message.getPartner())
+                   .thenAccept(msgHistoryOutMessage -> post(new MsgHistoryResult(message.getSender(), msgHistoryOutMessage)));
+    }
+
+    @Subscribe
+    private void handleHistoryResult(MsgHistoryResult result) {
+        if (clients.containsKey(result.user)) {
+            clients.get(result.user).post(result.message);
+        }
+    }
+
     /**
      * Registers a new user
      */
     @Subscribe
     private void handleConnectionEvent(ConnectionEvent message) {
-        String username = message.getConnectMessage().getUsername();
+        String username = message.getConnectMessage()
+                                 .getUsername();
         Socket client = message.getClient();
 
         if (username == null) {
@@ -151,13 +166,26 @@ public final class InteractorManager implements EventListener {
         writeToClientExecutor.shutdown();
     }
 
+    @Subscribe
+    private void handleUndeliveredMsgsResult(UndeliveredMsgsResult result) {
+        result.messages.forEach(sendMsgRequest -> {
+            SendMsgInMessage sendMessage = sendMsgRequest.getMessage();
+            String sender = sendMsgRequest.getSender();
+            if (clients.containsKey(result.user)) {
+                clients.get(result.user)
+                       .post(new NewMsgOutMessage(sender, sendMessage.getMessage(), clients.containsKey(sender),
+                               sendMsgRequest.getTimestamp()));
+            }
+        });
+    }
+
     private void connectUser(String username, Socket client) {
         try {
             ClientInteractor clientInteractor = new ClientInteractor(username, client, this);
-            clientInteractor.post(new ConnectionResultOutMessage(true));
             clients.put(username, clientInteractor);
+            clientInteractor.post(new ConnectionResultOutMessage(true));
 
-            sendNonDeliveredMsgs(username);
+            sendUndeliveredMsgs(username);
             log.info("User {} has connected", username);
         } catch (IOException e) {
             log.warn("Could not read from client {}", client.getInetAddress());
@@ -165,19 +193,9 @@ public final class InteractorManager implements EventListener {
         }
     }
 
-    private void sendNonDeliveredMsgs(String username) {
+    private void sendUndeliveredMsgs(String username) {
         getMsgDao().getUndeliveredMsgsForUser(username)
-                   .thenApply(undeliveredMsgs -> {
-                       undeliveredMsgs.forEach(sendMsgRequest -> {
-                           SendMsgInMessage sendMessage = sendMsgRequest.getMessage();
-                           String sender = sendMsgRequest.getSender();
-                           clients.get(username)
-                                  .post(new NewMsgOutMessage(sender, sendMessage.getMessage(), clients.containsKey(sender),
-                                          sendMsgRequest.getTimestamp()));
-                       });
-
-                       return null;
-                   });
+                   .thenAccept(undeliveredMsgs -> post(new UndeliveredMsgsResult(username, undeliveredMsgs)));
     }
 
     /**
@@ -196,6 +214,27 @@ public final class InteractorManager implements EventListener {
     }
 
     private ChatMsgDao getMsgDao() {
-        return DbHelper.getInstance().getMsgDao();
+        return DbHelper.getInstance()
+                       .getMsgDao();
+    }
+
+    private static class MsgHistoryResult {
+        String user;
+        MsgHistoryOutMessage message;
+
+        public MsgHistoryResult(String user, MsgHistoryOutMessage message) {
+            this.user = user;
+            this.message = message;
+        }
+    }
+
+    private static class UndeliveredMsgsResult {
+        String user;
+        List<SendMsgRequest> messages;
+
+        public UndeliveredMsgsResult(String user, List<SendMsgRequest> messages) {
+            this.user = user;
+            this.messages = messages;
+        }
     }
 }

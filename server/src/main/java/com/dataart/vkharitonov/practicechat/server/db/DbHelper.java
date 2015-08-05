@@ -23,13 +23,9 @@ public class DbHelper {
         flyway.migrate();
     }
 
-    public static void init(String dbName, String serverName, String username, String password) {
+    public static synchronized void init(String dbName, String serverName, String username, String password) {
         if (instance == null) {
-            synchronized (DbHelper.class) {
-                if (instance == null) {
-                    instance = new DbHelper(dbName, serverName, username, password);
-                }
-            }
+            instance = new DbHelper(dbName, serverName, username, password);
         }
     }
 
@@ -51,13 +47,9 @@ public class DbHelper {
         }
     }
 
-    public ChatMsgDao getMsgDao() {
+    public synchronized ChatMsgDao getMsgDao() {
         if (chatMsgDao == null) {
-            synchronized (DbHelper.class) {
-                if (chatMsgDao == null) {
-                    chatMsgDao = new ChatMsgDao(dataSource);
-                }
-            }
+            chatMsgDao = new ChatMsgDao(dataSource);
         }
 
         return chatMsgDao;

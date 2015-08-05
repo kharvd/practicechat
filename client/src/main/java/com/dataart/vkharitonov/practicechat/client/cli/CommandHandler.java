@@ -7,6 +7,8 @@ public interface CommandHandler {
 
     void onSendMessage(String username, String message);
 
+    void onHistory(String username);
+
     void onDisconnect();
 
     void onExit();

@@ -54,6 +54,15 @@ Payload example:
             "message": "sup m8"
         }
 
+#### get_history
+Requests message history with the specified user
+
+Payload example:
+
+        {
+            "username": "NAGibaTOR_40k"
+        }
+
 #### list_users
 Ask the server to return the list of all currently connected users.
 
@@ -101,4 +110,19 @@ Payload example:
             "timestamp": 1438182184000
         }
 
+#### message_history
+Sent by the server as a response to `get_history` command.
+
+Payload example:
+
+        {
+            "messages": [
+                {
+                    "sender": "NAGibaTOR_40k",
+                    "destination": "john_doe1952",
+                    "message": "sup m8",
+                    "timestamp": 1438182184000
+                }
+            ]
+        }
 

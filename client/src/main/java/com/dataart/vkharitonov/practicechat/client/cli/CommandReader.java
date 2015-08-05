@@ -60,6 +60,9 @@ public class CommandReader {
                         case "send":
                             parseSendMsgCommand();
                             break;
+                        case "history":
+                            parseHistoryCommand();
+                            break;
                         case "help":
                             handler.onHelp();
                             break;
@@ -81,12 +84,21 @@ public class CommandReader {
         handler.onExit();
     }
 
+    private void parseHistoryCommand() throws IOException {
+        final String historySyntaxString = "Syntax: history <username>";
+
+        if (tok.nextToken() != StreamTokenizer.TT_WORD) {
+            throw new IllegalArgumentException(historySyntaxString);
+        }
+
+        handler.onHistory(tok.sval);
+    }
 
     private void parseSendMsgCommand() throws IOException, IllegalArgumentException {
         int ttype = tok.nextToken();
-        final String sendMsgSyntaxString = "Syntax: send \"<username>\" \"<message>\"";
+        final String sendMsgSyntaxString = "Syntax: send <username> \"<message>\"";
 
-        if (ttype != '"') {
+        if (ttype != StreamTokenizer.TT_WORD) {
             throw new IllegalArgumentException(sendMsgSyntaxString);
         }
 
