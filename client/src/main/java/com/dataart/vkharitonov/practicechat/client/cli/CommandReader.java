@@ -114,7 +114,7 @@ public class CommandReader {
     }
 
     private void parseConnectCommand() throws IOException, IllegalArgumentException {
-        final String connectSyntaxString = "Syntax: connect <username>@<host>:<port>";
+        final String connectSyntaxString = "Syntax: connect <username>@<host>:<port> <password>";
 
         if (tok.nextToken() != StreamTokenizer.TT_WORD) {
             throw new IllegalArgumentException(connectSyntaxString);
@@ -137,9 +137,16 @@ public class CommandReader {
         int port;
         try {
             port = Integer.parseInt(hostAndPort[1]);
-            handler.onConnect(username, host, port);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(connectSyntaxString);
         }
+
+        if (tok.nextToken() != StreamTokenizer.TT_WORD) {
+            throw new IllegalArgumentException(connectSyntaxString);
+        }
+
+        String password = tok.sval;
+
+        handler.onConnect(username, password, host, port);
     }
 }

@@ -8,7 +8,7 @@ import java.util.List;
  * Listens to server's messages to the client
  */
 public interface ServerMessageListener {
-    void onConnectionResult(boolean success);
+    void onConnectionResult(boolean success, boolean userExists);
 
     void onMessageSent(String user);
 

@@ -23,7 +23,7 @@ public class Main {
 
     private static void showHelp() {
         System.out.println("Available commands: \n" +
-                "    connect <user>@<host>:<port> - connects <user> to <host>:<port>\n" +
+                "    connect <user>@<host>:<port> <password> - connects <user> to <host>:<port>\n" +
                 "    list - lists users currently connected to the server\n" +
                 "    send <username> \"<message>\" - sends <message> to <username>\n" +
                 "    history <username> - lists message history with user <username>\n" +
@@ -47,13 +47,13 @@ public class Main {
     private static class MainCommandHandler implements CommandHandler {
 
         @Override
-        public void onConnect(String username, String host, int port) {
+        public void onConnect(String username, String password, String host, int port) {
             if (connection != null && connection.isConnected()) {
                 System.out.println("Already connected");
             } else {
                 System.out.format("Connecting to %s:%d as %s%n", host, port, username);
                 try {
-                    connection = new ChatConnection(username, host, port, new MainServerMessageListener());
+                    connection = new ChatConnection(username, password, host, port, new MainServerMessageListener());
                 } catch (IOException e) {
                     System.out.println("Couldn't connect to host");
                 }
@@ -125,14 +125,19 @@ public class Main {
      */
     private static class MainServerMessageListener implements ServerMessageListener {
         @Override
-        public void onConnectionResult(boolean success) {
-            if (success) {
+        public void onConnectionResult(boolean success, boolean userExists) {
+            if (success && userExists) {
                 System.out.println("Successfully connected to the server");
+            } else if (success) {
+                System.out.println("Successfully registered a new user");
+            } else if (userExists) {
+                System.out.println("Invalid password");
             } else {
-                System.out.println("Username is already taken");
-                if (connection != null) {
-                    connection.disconnect();
-                }
+                System.out.println("Invalid username");
+            }
+
+            if (!success && connection != null) {
+                connection.disconnect();
             }
         }
 

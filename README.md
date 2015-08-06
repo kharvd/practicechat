@@ -29,15 +29,17 @@ Every message is a JSON object that contains two fields:
 ### Client-to-Server messages
 
 #### connect
-Tries to connect the client to the server. Must be called within 1 second after socket connection.
+Tries to login the user with the specified username and password. If the user doesn't exist, registers them.
+Username cannot contain spaces. This message must be sent by the client within 
 
 Payload example:
 
         {
-            "username": "john_doe1952"
+            "username": "john_doe1952",
+            "password": "qwerty"
         }
 
-The server must answer with `connection_result` message
+The server must answer with `login_result` message
 
 #### disconnect
 Disconnects currently connected user from the server. 
@@ -70,14 +72,23 @@ Payload must be `null`.
 
 ### Server-to-Client messages
 
-#### connection_result
-Sent by the server upon client's connect request. If the user with 
-the specified name is already connected, returns `"success": false`, otherwise returns `true`.
+#### connect_result
+Sent by the server upon client's `connect` request. `user_exists` is true, if the user was already registered.
+`success` is false if the specified user exists and the password is wrong, or if the username contains illegal characters.
 
-Payload example:
+Payload example (success):
 
         {
-            "success": true
+            "success": true,
+            "user_exists": false
+        }
+
+        
+Payload example (failure):
+
+        {
+            "success": false,
+            "user_exists": true
         }
 
 #### user_list

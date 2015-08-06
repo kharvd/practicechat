@@ -49,12 +49,16 @@ public class ChatMsgDao extends Dao<ChatMsgDto> {
 
     public CompletableFuture<Void> setOldestMessageDelivered(String username) {
         return supplyAsync(connection -> {
+            log.info("setting delivered flag");
+
             String sql = "UPDATE messages SET delivered = TRUE \n" +
                     "WHERE id = (SELECT id FROM messages \n" +
                     "            WHERE destination = ? AND NOT delivered\n" +
                     "            ORDER BY sending_time \n" +
                     "            LIMIT 1);";
-            getQueryRunner().update(connection, sql, username);
+            int rowsAffected = getQueryRunner().update(connection, sql, username);
+
+            log.info("delivered flag set {}", rowsAffected);
 
             return null;
         });

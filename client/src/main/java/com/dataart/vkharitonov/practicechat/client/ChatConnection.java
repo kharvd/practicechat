@@ -24,14 +24,14 @@ public class ChatConnection {
     private PrintWriter writer;
     private ServerMessageListener listener;
 
-    public ChatConnection(String username, String host, int port, ServerMessageListener listener) throws IOException {
+    public ChatConnection(String username, String password, String host, int port, ServerMessageListener listener) throws IOException {
         this.listener = listener;
 
         socket = new Socket(host, port);
         writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
         MessageProducer producer = new MessageProducer();
         producer.start(socket.getInputStream(), new MessageConsumer());
-        writeConnectMessage(username);
+        writeConnectMessage(username, password);
     }
 
     /**
@@ -89,8 +89,8 @@ public class ChatConnection {
         sendMessage(Message.MessageType.SEND_MESSAGE, new SendMsgInMessage(destination, message));
     }
 
-    private void writeConnectMessage(String username) throws IOException {
-        sendMessage(Message.MessageType.CONNECT, new ConnectInMessage(username));
+    private void writeConnectMessage(String username, String password) throws IOException {
+        sendMessage(Message.MessageType.CONNECT, new ConnectInMessage(username, password));
     }
 
     private <T> void sendMessage(Message.MessageType type, T payload) throws IOException {
@@ -121,7 +121,7 @@ public class ChatConnection {
     private void handleConnectionResult(Message message) {
         ConnectionResultOutMessage payload =
                 JsonUtils.GSON.fromJson(message.getPayload(), ConnectionResultOutMessage.class);
-        listener.onConnectionResult(payload.isSuccess());
+        listener.onConnectionResult(payload.isSuccess(), payload.isUserExists());
     }
 
     private void handleMessageHistory(Message message) {

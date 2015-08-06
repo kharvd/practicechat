@@ -4,10 +4,13 @@ import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.server.db.ChatMsgDao;
 import com.dataart.vkharitonov.practicechat.server.db.DbHelper;
+import com.dataart.vkharitonov.practicechat.server.db.UserDao;
+import com.dataart.vkharitonov.practicechat.server.db.UserDto;
 import com.dataart.vkharitonov.practicechat.server.event.*;
 import com.dataart.vkharitonov.practicechat.server.queue.EventListener;
 import com.dataart.vkharitonov.practicechat.server.queue.EventQueue;
 import com.dataart.vkharitonov.practicechat.server.queue.Subscribe;
+import com.dataart.vkharitonov.practicechat.server.utils.HashUtils;
 import org.apache.commons.net.io.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +22,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -90,12 +94,12 @@ public final class InteractorManager implements EventListener {
             return;
         }
 
-        getMsgDao().addUndeliveredMsg(message);
-
-        if (clients.containsKey(destination)) {
-            ClientInteractor destinationClient = clients.get(destination);
-            destinationClient.post(new NewMsgOutMessage(sender, sendMessage.getMessage(), true, message.getTimestamp()));
-        }
+        getMsgDao().addUndeliveredMsg(message).thenRunAsync(() -> {
+            if (clients.containsKey(destination)) {
+                ClientInteractor destinationClient = clients.get(destination);
+                destinationClient.post(new NewMsgOutMessage(sender, sendMessage.getMessage(), true, message.getTimestamp()));
+            }
+        }, eventQueue.executor());
     }
 
     /**
@@ -134,17 +138,33 @@ public final class InteractorManager implements EventListener {
     @Subscribe
     private void handleConnectionEvent(ConnectionEvent message) {
         String username = message.getConnectMessage().getUsername();
+        String password = message.getConnectMessage().getPassword();
         Socket client = message.getClient();
 
         if (username == null) {
             log.info("Username can't be null from {}", client.getInetAddress());
-            writeToClientExecutor.submit(() -> sendConnectionFailure(client));
-        } else if (clients.containsKey(username)) {
-            log.info("User {} is already connected", username);
-            writeToClientExecutor.submit(() -> sendConnectionFailure(client));
-        } else {
-            connectUser(username, client);
+            writeToClientExecutor.submit(() -> sendConnectionFailure(client, false));
+            return;
         }
+
+        if (clients.containsKey(username)) {
+            log.info("User {} is already connected", username);
+            writeToClientExecutor.submit(() -> sendConnectionFailure(client, true));
+        }
+
+        getUserDao().getUserByName(username).thenAcceptAsync(userDtoOptional -> {
+            if (userDtoOptional.isPresent()) {
+                if (authenticateUser(userDtoOptional.get(), password)) {
+                    connectUser(username, client, true);
+                } else {
+                    log.info("Invalid password for user {}", username);
+                    writeToClientExecutor.submit(() -> sendConnectionFailure(client, true));
+                }
+            } else {
+                log.info("Creating user {}", username);
+                createUser(username, password, client);
+            }
+        }, eventQueue.executor());
     }
 
     /**
@@ -161,11 +181,26 @@ public final class InteractorManager implements EventListener {
         writeToClientExecutor.shutdown();
     }
 
-    private void connectUser(String username, Socket client) {
+    private boolean authenticateUser(UserDto user, String password) {
+        String salt = user.getSalt();
+        String hash = HashUtils.hash(password, salt);
+
+        return Objects.equals(hash, user.getHash());
+    }
+
+    private void createUser(String username, String password, Socket client) {
+        String salt = HashUtils.newSalt();
+        String hash = HashUtils.hash(password, salt);
+
+        getUserDao().createUser(username, hash, salt)
+                    .thenRunAsync(() -> connectUser(username, client, false), eventQueue.executor());
+    }
+
+    private void connectUser(String username, Socket client, boolean userExists) {
         try {
             ClientInteractor clientInteractor = new ClientInteractor(username, client, this);
             clients.put(username, clientInteractor);
-            clientInteractor.post(new ConnectionResultOutMessage(true));
+            clientInteractor.post(new ConnectionResultOutMessage(true, userExists));
 
             sendUndeliveredMsgs(username);
             log.info("User {} has connected", username);
@@ -193,8 +228,8 @@ public final class InteractorManager implements EventListener {
      *
      * @param clientSocket client socket
      */
-    private void sendConnectionFailure(Socket clientSocket) {
-        String message = JsonUtils.GSON.toJson(new Message(Message.MessageType.CONNECTION_RESULT, new ConnectionResultOutMessage(false)));
+    private void sendConnectionFailure(Socket clientSocket, boolean userExists) {
+        String message = JsonUtils.GSON.toJson(new Message(Message.MessageType.CONNECTION_RESULT, new ConnectionResultOutMessage(false, userExists)));
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8), true)) {
             clientSocket.setSoTimeout(CONNECTION_FAILURE_TIMEOUT);
             out.println(message);
@@ -205,5 +240,9 @@ public final class InteractorManager implements EventListener {
 
     private ChatMsgDao getMsgDao() {
         return DbHelper.getInstance().getMsgDao();
+    }
+
+    private UserDao getUserDao() {
+        return DbHelper.getInstance().getUserDao();
     }
 }
