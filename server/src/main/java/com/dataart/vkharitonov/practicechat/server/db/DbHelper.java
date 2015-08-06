@@ -3,12 +3,18 @@ package com.dataart.vkharitonov.practicechat.server.db;
 import org.flywaydb.core.Flyway;
 import org.postgresql.ds.PGPoolingDataSource;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DbHelper {
 
+    private static final int MAX_THREADS = 10;
+    private static ExecutorService dbExecutor;
     private static DbHelper instance;
     private PGPoolingDataSource dataSource;
+
     private ChatMsgDao chatMsgDao;
 
     private DbHelper(String dbName, String serverName, String username, String password) {
@@ -26,6 +32,7 @@ public class DbHelper {
     public static synchronized void init(String dbName, String serverName, String username, String password) {
         if (instance == null) {
             instance = new DbHelper(dbName, serverName, username, password);
+            dbExecutor = Executors.newFixedThreadPool(MAX_THREADS);
         }
     }
 
@@ -37,6 +44,10 @@ public class DbHelper {
                 instance.chatMsgDao.close();
                 instance.chatMsgDao = null;
             }
+
+            if (dbExecutor != null) {
+                dbExecutor.shutdown();
+            }
         }
     }
 
@@ -45,6 +56,10 @@ public class DbHelper {
             checkNotNull(instance, "You must call init() first");
             return instance;
         }
+    }
+
+    static ExecutorService getDbExecutor() {
+        return dbExecutor;
     }
 
     public synchronized ChatMsgDao getMsgDao() {

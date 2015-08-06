@@ -38,7 +38,6 @@ public final class ClientInteractor implements EventListener {
 
     private final static Logger log = LoggerFactory.getLogger(ClientInteractor.class.getName());
 
-
     private PrintWriter writer;
     private String username;
     private Socket clientSocket;

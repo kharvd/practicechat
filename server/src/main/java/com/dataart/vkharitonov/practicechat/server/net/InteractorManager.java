@@ -133,8 +133,7 @@ public final class InteractorManager implements EventListener {
      */
     @Subscribe
     private void handleConnectionEvent(ConnectionEvent message) {
-        String username = message.getConnectMessage()
-                                 .getUsername();
+        String username = message.getConnectMessage().getUsername();
         Socket client = message.getClient();
 
         if (username == null) {
