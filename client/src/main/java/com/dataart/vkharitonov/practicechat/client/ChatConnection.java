@@ -94,10 +94,12 @@ public class ChatConnection {
     }
 
     private <T> void sendMessage(Message.MessageType type, T payload) throws IOException {
-        Message message = new Message(type, payload);
-        writer.println(JsonUtils.GSON.toJson(message));
-        if (writer.checkError()) {
-            throw new IOException("Couldn't write to socket");
+        if (writer != null) {
+            Message message = new Message(type, payload);
+            writer.println(JsonUtils.GSON.toJson(message));
+            if (writer.checkError()) {
+                throw new IOException("Couldn't write to socket");
+            }
         }
     }
 

@@ -30,10 +30,6 @@ import java.util.concurrent.Executors;
  * <li>{@link NewMsgOutMessage} - sends a message to the current user</li>
  * <li>{@link MsgSentOutMessage} - sends "message sent" acknowledgement to the current user</li>
  * <p>
- * <li>{@link ListUsersRequest} - asks the interaction manager to return a user list</li>
- * <li>{@link SendMsgRequest} - asks the interaction manager to send a message to some user.
- * Replies with {@link MsgSentRequest} as soon as the message is sent</li>
- * <li>{@link MsgSentRequest} - asks the interaction manager to send a "message sent" ack to some user</li>
  * <li>{@link DisconnectRequest} - disconnects current user, notifies the interaction manager and shuts down</li>
  * <li>{@link ShutdownCommand} - shuts down without notifying the interactor manager</li>
  * </ul>
@@ -96,35 +92,6 @@ public final class ClientInteractor implements EventListener {
     }
 
     /**
-     * Asks the interaction manager to return a user list
-     */
-    @Subscribe
-    private void handleListUsersRequest(ListUsersRequest message) {
-        sendToManager(message);
-    }
-
-    /**
-     * Asks the interaction manager to send a message to some user
-     */
-    @Subscribe
-    private void handleSendMsgRequest(SendMsgRequest message) {
-        sendToManager(message);
-    }
-
-    /**
-     * Asks the interaction manager to send a "message sent" ack to some user
-     */
-    @Subscribe
-    private void handleMsgSentRequest(MsgSentRequest message) {
-        sendToManager(message);
-    }
-
-    @Subscribe
-    private void handleHistoryRequest(HistoryRequest message) {
-        sendToManager(message);
-    }
-
-    /**
      * Sends "message sent" acknowledgement to the current user
      */
     @Subscribe
@@ -154,7 +121,7 @@ public final class ClientInteractor implements EventListener {
     @Subscribe
     private void sendNewMessage(NewMsgOutMessage message) {
         CompletableFuture<Void> future = sendMessageToClient(Message.MessageType.NEW_MESSAGE, message);
-        future.thenRun(() -> eventQueue.post(new MsgSentRequest(username, message.getUsername())))
+        future.thenRun(() -> interactorManager.post(new MsgSentRequest(username, message.getUsername())))
               .exceptionally(e -> {
                   log.warn("Failed to send message to {}: {}", username, e.getLocalizedMessage());
                   return null;
@@ -179,10 +146,6 @@ public final class ClientInteractor implements EventListener {
         eventQueue.stop();
     }
 
-    private void sendToManager(Object message) {
-        interactorManager.post(message);
-    }
-
     private void closeConnection() {
         if (!clientSocket.isClosed()) {
             Util.closeQuietly(clientSocket);
@@ -204,18 +167,18 @@ public final class ClientInteractor implements EventListener {
             if (message.getMessageType() != null) {
                 switch (message.getMessageType()) {
                     case LIST_USERS:
-                        eventQueue.post(new ListUsersRequest(username));
+                        interactorManager.post(new ListUsersRequest(username));
                         break;
                     case DISCONNECT:
                         messageProducer.stop();
                         break;
                     case SEND_MESSAGE:
                         SendMsgInMessage msg = JsonUtils.GSON.fromJson(message.getPayload(), SendMsgInMessage.class);
-                        eventQueue.post(new SendMsgRequest(username, msg));
+                        interactorManager.post(new SendMsgRequest(username, msg));
                         break;
                     case GET_HISTORY:
                         GetHistoryInMessage getHistoryMessage = JsonUtils.GSON.fromJson(message.getPayload(), GetHistoryInMessage.class);
-                        eventQueue.post(new HistoryRequest(username, getHistoryMessage.getUsername()));
+                        interactorManager.post(new HistoryRequest(username, getHistoryMessage.getUsername()));
                         break;
                     default:
                         log.warn("Unexpected message from {}", username);

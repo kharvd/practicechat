@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class ChatMsgDao {
 
     private final static Logger log = LoggerFactory.getLogger(ChatMsgDao.class.getName());
-
+    private static final int MAX_THREADS = 10;
     private DataSource dataSource;
     private QueryRunner run;
     private ExecutorService dbExecutor;
@@ -29,7 +29,8 @@ public class ChatMsgDao {
 
     protected ChatMsgDao(DataSource dataSource) {
         this.dataSource = dataSource;
-        dbExecutor = Executors.newSingleThreadExecutor();
+        dbExecutor = Executors.newFixedThreadPool(MAX_THREADS);
+
         messageHandler = new BeanListHandler<>(ChatMsgDto.class);
         run = new QueryRunner();
     }
@@ -92,10 +93,8 @@ public class ChatMsgDao {
                     "VALUES (?, ?, ?, to_timestamp(?), FALSE);";
             run.insert(conn, insert, messageHandler,
                     request.getSender(),
-                    request.getMessage()
-                           .getUsername(),
-                    request.getMessage()
-                           .getMessage(),
+                    request.getMessage().getUsername(),
+                    request.getMessage().getMessage(),
                     request.getTimestamp() / 1000.0);
         } catch (SQLException e) {
             throw new RuntimeException(e);

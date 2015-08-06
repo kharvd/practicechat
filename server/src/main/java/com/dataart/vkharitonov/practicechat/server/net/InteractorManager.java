@@ -18,7 +18,6 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -122,14 +121,11 @@ public final class InteractorManager implements EventListener {
     @Subscribe
     private void handleHistoryRequest(HistoryRequest message) {
         getMsgDao().getHistoryForUsers(message.getSender(), message.getPartner())
-                   .thenAccept(msgHistoryOutMessage -> post(new MsgHistoryResult(message.getSender(), msgHistoryOutMessage)));
-    }
-
-    @Subscribe
-    private void handleHistoryResult(MsgHistoryResult result) {
-        if (clients.containsKey(result.user)) {
-            clients.get(result.user).post(result.message);
-        }
+                   .thenAcceptAsync(msgHistoryOutMessage -> {
+                       if (clients.containsKey(message.getSender())) {
+                           clients.get(message.getSender()).post(msgHistoryOutMessage);
+                       }
+                   }, eventQueue.executor());
     }
 
     /**
@@ -166,19 +162,6 @@ public final class InteractorManager implements EventListener {
         writeToClientExecutor.shutdown();
     }
 
-    @Subscribe
-    private void handleUndeliveredMsgsResult(UndeliveredMsgsResult result) {
-        result.messages.forEach(sendMsgRequest -> {
-            SendMsgInMessage sendMessage = sendMsgRequest.getMessage();
-            String sender = sendMsgRequest.getSender();
-            if (clients.containsKey(result.user)) {
-                clients.get(result.user)
-                       .post(new NewMsgOutMessage(sender, sendMessage.getMessage(), clients.containsKey(sender),
-                               sendMsgRequest.getTimestamp()));
-            }
-        });
-    }
-
     private void connectUser(String username, Socket client) {
         try {
             ClientInteractor clientInteractor = new ClientInteractor(username, client, this);
@@ -195,7 +178,15 @@ public final class InteractorManager implements EventListener {
 
     private void sendUndeliveredMsgs(String username) {
         getMsgDao().getUndeliveredMsgsForUser(username)
-                   .thenAccept(undeliveredMsgs -> post(new UndeliveredMsgsResult(username, undeliveredMsgs)));
+                   .thenAcceptAsync(undeliveredMsgs -> undeliveredMsgs.forEach(sendMsgRequest -> {
+                       SendMsgInMessage sendMessage = sendMsgRequest.getMessage();
+                       String sender = sendMsgRequest.getSender();
+                       if (clients.containsKey(username)) {
+                           clients.get(username)
+                                  .post(new NewMsgOutMessage(sender, sendMessage.getMessage(), clients.containsKey(sender),
+                                          sendMsgRequest.getTimestamp()));
+                       }
+                   }), eventQueue.executor());
     }
 
     /**
@@ -214,27 +205,6 @@ public final class InteractorManager implements EventListener {
     }
 
     private ChatMsgDao getMsgDao() {
-        return DbHelper.getInstance()
-                       .getMsgDao();
-    }
-
-    private static class MsgHistoryResult {
-        String user;
-        MsgHistoryOutMessage message;
-
-        public MsgHistoryResult(String user, MsgHistoryOutMessage message) {
-            this.user = user;
-            this.message = message;
-        }
-    }
-
-    private static class UndeliveredMsgsResult {
-        String user;
-        List<SendMsgRequest> messages;
-
-        public UndeliveredMsgsResult(String user, List<SendMsgRequest> messages) {
-            this.user = user;
-            this.messages = messages;
-        }
+        return DbHelper.getInstance().getMsgDao();
     }
 }
