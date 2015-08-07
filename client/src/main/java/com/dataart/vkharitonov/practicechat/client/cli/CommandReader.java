@@ -1,16 +1,35 @@
 package com.dataart.vkharitonov.practicechat.client.cli;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StreamTokenizer;
-import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-/**
- * Reads user commands from a {@link Reader}
- */
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class CommandReader {
 
-    private final StreamTokenizer tok;
+    private static final String USERNAME_PATTERN = "[\\S&&[^#]]+";
+    private static final String HOST_PATTERN = "([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])" +
+            "(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*";
+
+    private static final String CONNECT_SYNTAX_STRING = "Syntax: connect <username>@<host>:<port> <password>";
+    private static final Pattern CONNECT_PATTERN = Pattern.compile("connect\\s+(?<username>" + USERNAME_PATTERN + ")@(?<host>" + HOST_PATTERN + "):(?<port>\\d+)\\s+(?<password>\\S+)");
+
+    private static final String LIST_SYNTAX_STRING = "Syntax: list [#<room>]";
+    private static final Pattern LIST_PATTERN = Pattern.compile("list(\\s+(?<roomName>#?" + USERNAME_PATTERN + "))?");
+
+    private static final String SEND_SYNTAX_STRING = "Syntax: send <username> \"<message>\"";
+    private static final Pattern SEND_PATTERN = Pattern.compile("send\\s+(?<name>#?" + USERNAME_PATTERN + ")\\s+\"(?<message>.*)\"");
+
+    private static final String HISTORY_SYNTAX_STRING = "Syntax: history <username>";
+    private static final Pattern HISTORY_PATTERN = Pattern.compile("history\\s+(?<name>" + USERNAME_PATTERN + ")");
+
+    private static final String JOIN_SYNTAX_STRING = "Syntax: join #<room>";
+    private static final Pattern JOIN_PATTERN = Pattern.compile("join\\s+(?<roomName>#?" + USERNAME_PATTERN + ")");
+
+    private final BufferedReader in;
     private CommandHandler handler;
 
     /**
@@ -20,19 +39,10 @@ public class CommandReader {
      * @param handler Callback which handles incoming commands
      */
     public CommandReader(Reader in, CommandHandler handler) {
-        if (handler == null) {
-            throw new NullPointerException();
-        }
+        checkNotNull(handler);
 
+        this.in = new BufferedReader(in);
         this.handler = handler;
-
-        tok = new StreamTokenizer(in);
-        tok.resetSyntax();
-        tok.wordChars(0x23, 0xFF);
-        tok.whitespaceChars(0x00, 0x20);
-        tok.quoteChar('"');
-        tok.eolIsSignificant(true);
-        tok.lowerCaseMode(true);
 
         try {
             loop();
@@ -42,142 +52,101 @@ public class CommandReader {
     }
 
     private void loop() throws IOException {
-        int ttype = tok.nextToken();
-
-        while (!Objects.equals(tok.sval, "exit") && ttype != StreamTokenizer.TT_EOF) {
-            if (ttype == StreamTokenizer.TT_WORD) {
-                try {
-                    switch (tok.sval) {
-                        case "connect":
-                            parseConnectCommand();
-                            break;
-                        case "disconnect":
-                            handler.onDisconnect();
-                            break;
-                        case "list":
-                            parseListCommand();
-                            break;
-                        case "send":
-                            parseSendMsgCommand();
-                            break;
-                        case "history":
-                            parseHistoryCommand();
-                            break;
-                        case "join":
-                            parseJoinCommand();
-                            break;
-                        case "help":
-                            handler.onHelp();
-                            break;
-                        default:
-                            throw new IllegalArgumentException("Unknown command: " + tok.sval);
-                    }
-                } catch (IllegalArgumentException e) {
-                    handler.onError(e);
+        String line;
+        while ((line = in.readLine()) != null) {
+            String trimmed = line.trim();
+            String[] split = trimmed.split(" ", 2);
+            try {
+                switch (split[0]) {
+                    case "connect":
+                        parseConnectCommand(line);
+                        break;
+                    case "disconnect":
+                        handler.onDisconnect();
+                        break;
+                    case "list":
+                        parseListCommand(line);
+                        break;
+                    case "send":
+                        parseSendMsgCommand(line);
+                        break;
+                    case "history":
+                        parseHistoryCommand(line);
+                        break;
+                    case "join":
+                        parseJoinCommand(line);
+                        break;
+                    case "help":
+                        handler.onHelp();
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown command: " + split[0]);
                 }
+            } catch (IllegalArgumentException e) {
+                handler.onError(e);
             }
-
-            do {
-                ttype = tok.nextToken();
-            } while (ttype != StreamTokenizer.TT_EOF && ttype != StreamTokenizer.TT_EOL);
-
-            ttype = tok.nextToken();
         }
 
         handler.onExit();
     }
 
-    private void parseListCommand() throws IOException {
-        String roomName = null;
-        if (tok.nextToken() == StreamTokenizer.TT_WORD) {
-            roomName = tok.sval;
+    private void parseJoinCommand(String line) {
+        Matcher matcher = JOIN_PATTERN.matcher(line);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException(JOIN_SYNTAX_STRING);
         }
 
-        if (roomName != null && !roomName.startsWith("#")) {
-            roomName = "#" + tok.sval;
-        }
+        String roomName = matcher.group("roomName");
 
-        handler.onList(roomName);
-    }
-
-    private void parseHistoryCommand() throws IOException {
-        final String historySyntaxString = "Syntax: history <username>";
-
-        if (tok.nextToken() != StreamTokenizer.TT_WORD) {
-            throw new IllegalArgumentException(historySyntaxString);
-        }
-
-        handler.onHistory(tok.sval);
-    }
-
-    private void parseJoinCommand() throws IOException {
-        final String joinSyntaxString = "Syntax: join #<room>";
-
-        if (tok.nextToken() != StreamTokenizer.TT_WORD) {
-            throw new IllegalArgumentException(joinSyntaxString);
-        }
-
-        String roomName = tok.sval;
         if (!roomName.startsWith("#")) {
-            roomName = "#" + tok.sval;
+            roomName = "#" + roomName;
         }
 
         handler.onJoin(roomName);
     }
 
-    private void parseSendMsgCommand() throws IOException, IllegalArgumentException {
-        int ttype = tok.nextToken();
-        final String sendMsgSyntaxString = "Syntax: send <username> \"<message>\"";
-
-        if (ttype != StreamTokenizer.TT_WORD) {
-            throw new IllegalArgumentException(sendMsgSyntaxString);
+    private void parseHistoryCommand(String line) {
+        Matcher matcher = HISTORY_PATTERN.matcher(line);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException(HISTORY_SYNTAX_STRING);
         }
 
-        String username = tok.sval;
-        ttype = tok.nextToken();
-
-        if (ttype != '"') {
-            throw new IllegalArgumentException(sendMsgSyntaxString);
-        }
-
-        String message = tok.sval;
-        handler.onSendMessage(username, message);
+        handler.onHistory(matcher.group("name"));
     }
 
-    private void parseConnectCommand() throws IOException, IllegalArgumentException {
-        final String connectSyntaxString = "Syntax: connect <username>@<host>:<port> <password>";
-
-        if (tok.nextToken() != StreamTokenizer.TT_WORD) {
-            throw new IllegalArgumentException(connectSyntaxString);
+    private void parseSendMsgCommand(String line) {
+        Matcher matcher = SEND_PATTERN.matcher(line);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException(SEND_SYNTAX_STRING);
         }
 
-        String connectString = tok.sval;
-        String[] userAndHostPort = connectString.split("@");
+        handler.onSendMessage(matcher.group("name"), matcher.group("message"));
+    }
 
-        if (userAndHostPort.length < 2) {
-            throw new IllegalArgumentException(connectSyntaxString);
+    private void parseListCommand(String line) {
+        Matcher matcher = LIST_PATTERN.matcher(line);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException(LIST_SYNTAX_STRING);
         }
 
-        String username = userAndHostPort[0];
-        String[] hostAndPort = userAndHostPort[1].split(":");
-        if (hostAndPort.length < 2) {
-            throw new IllegalArgumentException(connectSyntaxString);
+        String roomName = matcher.group("roomName");
+
+        if (roomName != null && !roomName.startsWith("#")) {
+            roomName = "#" + roomName;
         }
 
-        String host = hostAndPort[0];
-        int port;
-        try {
-            port = Integer.parseInt(hostAndPort[1]);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(connectSyntaxString);
+        handler.onList(roomName);
+    }
+
+    private void parseConnectCommand(String line) {
+        Matcher matcher = CONNECT_PATTERN.matcher(line);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException(CONNECT_SYNTAX_STRING);
         }
 
-        if (tok.nextToken() != StreamTokenizer.TT_WORD) {
-            throw new IllegalArgumentException(connectSyntaxString);
-        }
-
-        String password = tok.sval;
-
-        handler.onConnect(username, password, host, port);
+        handler.onConnect(matcher.group("username"),
+                matcher.group("password"),
+                matcher.group("host"),
+                Integer.valueOf(matcher.group("port")));
     }
 }
