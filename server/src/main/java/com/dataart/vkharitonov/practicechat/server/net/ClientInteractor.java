@@ -171,10 +171,10 @@ public final class ClientInteractor implements EventListener {
             if (message.getMessageType() != null) {
                 switch (message.getMessageType()) {
                     case LIST_USERS:
-                        if (message.getPayload() == null || message.getPayload().isJsonNull()) {
+                        if (message.getRawPayload() == null || message.getRawPayload().isJsonNull()) {
                             interactorManager.post(new ListUsersRequest(username));
                         } else {
-                            ListUsersInMessage listUsersInMessage = JsonUtils.GSON.fromJson(message.getPayload(), ListUsersInMessage.class);
+                            ListUsersInMessage listUsersInMessage = message.getPayload(ListUsersInMessage.class);
                             interactorManager.post(new ListUsersRequest(username, listUsersInMessage.getRoomName()));
                         }
                         break;
@@ -182,15 +182,15 @@ public final class ClientInteractor implements EventListener {
                         messageProducer.stop();
                         break;
                     case SEND_MESSAGE:
-                        SendMsgInMessage msg = JsonUtils.GSON.fromJson(message.getPayload(), SendMsgInMessage.class);
+                        SendMsgInMessage msg = message.getPayload(SendMsgInMessage.class);
                         interactorManager.post(new SendMsgRequest(username, msg));
                         break;
                     case GET_HISTORY:
-                        GetHistoryInMessage getHistoryMessage = JsonUtils.GSON.fromJson(message.getPayload(), GetHistoryInMessage.class);
+                        GetHistoryInMessage getHistoryMessage = message.getPayload(GetHistoryInMessage.class);
                         interactorManager.post(new HistoryRequest(username, getHistoryMessage.getUsername()));
                         break;
                     case JOIN_ROOM:
-                        JoinRoomInMessage joinRoomMessage = JsonUtils.GSON.fromJson(message.getPayload(), JoinRoomInMessage.class);
+                        JoinRoomInMessage joinRoomMessage = message.getPayload(JoinRoomInMessage.class);
                         interactorManager.post(new JoinRoomRequest(username, joinRoomMessage.getRoomName()));
                         break;
                     default:

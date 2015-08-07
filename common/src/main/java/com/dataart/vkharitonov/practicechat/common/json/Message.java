@@ -18,7 +18,11 @@ public class Message {
         return messageType;
     }
 
-    public JsonElement getPayload() {
+    public <T> T getPayload(Class<T> cls) {
+        return JsonUtils.GSON.fromJson(payload, cls);
+    }
+
+    public JsonElement getRawPayload() {
         return payload;
     }
 

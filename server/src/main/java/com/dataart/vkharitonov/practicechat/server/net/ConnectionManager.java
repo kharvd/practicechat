@@ -84,7 +84,7 @@ public final class ConnectionManager {
                 client.setSoTimeout(0);
 
                 if (message.getMessageType() == Message.MessageType.CONNECT) {
-                    ConnectInMessage connectMessage = JsonUtils.GSON.fromJson(message.getPayload(), ConnectInMessage.class);
+                    ConnectInMessage connectMessage = message.getPayload(ConnectInMessage.class);
                     connectionListener.post(new ConnectionEvent(connectMessage, client));
                 } else {
                     throw new JsonSyntaxException("First message should be `connect`");

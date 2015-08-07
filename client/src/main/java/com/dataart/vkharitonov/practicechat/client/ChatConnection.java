@@ -111,33 +111,32 @@ public class ChatConnection {
     }
 
     private void handleUserList(Message message) {
-        UserListOutMessage payload = JsonUtils.GSON.fromJson(message.getPayload(), UserListOutMessage.class);
+        UserListOutMessage payload = message.getPayload(UserListOutMessage.class);
         listener.onUserList(payload.getUsers());
     }
 
     private void handleNewMessage(Message message) {
-        NewMsgOutMessage payload = JsonUtils.GSON.fromJson(message.getPayload(), NewMsgOutMessage.class);
+        NewMsgOutMessage payload = message.getPayload(NewMsgOutMessage.class);
         listener.onNewMessage(payload.getUsername(), payload.getMessage(), payload.isOnline(), payload.getTimestamp());
     }
 
     private void handleMsgSent(Message message) {
-        MsgSentOutMessage payload = JsonUtils.GSON.fromJson(message.getPayload(), MsgSentOutMessage.class);
+        MsgSentOutMessage payload = message.getPayload(MsgSentOutMessage.class);
         listener.onMessageSent(payload.getUsername());
     }
 
     private void handleConnectionResult(Message message) {
-        ConnectionResultOutMessage payload =
-                JsonUtils.GSON.fromJson(message.getPayload(), ConnectionResultOutMessage.class);
+        ConnectionResultOutMessage payload = message.getPayload(ConnectionResultOutMessage.class);
         listener.onConnectionResult(payload.isSuccess(), payload.isUserExists());
     }
 
     private void handleMessageHistory(Message message) {
-        MsgHistoryOutMessage msg = JsonUtils.GSON.fromJson(message.getPayload(), MsgHistoryOutMessage.class);
+        MsgHistoryOutMessage msg = message.getPayload(MsgHistoryOutMessage.class);
         listener.onMessageHistory(msg.getMessages());
     }
 
     private void handleRoomJoined(Message message) {
-        RoomJoinedOutMessage msg = JsonUtils.GSON.fromJson(message.getPayload(), RoomJoinedOutMessage.class);
+        RoomJoinedOutMessage msg = message.getPayload(RoomJoinedOutMessage.class);
         listener.onRoomJoined(msg.getRoomName(), msg.isRoomExists());
     }
 
