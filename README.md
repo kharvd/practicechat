@@ -102,7 +102,7 @@ server returns the list of all users who joined the room.
 Payload example:
 
         {
-            "name": "#java_devs"
+            "room_name": "#java_devs"
         }
 
 #### list_rooms

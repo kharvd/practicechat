@@ -1,6 +1,7 @@
 package com.dataart.vkharitonov.practicechat.client;
 
 import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
+import com.dataart.vkharitonov.practicechat.common.json.UserListOutMessage;
 
 import java.util.List;
 
@@ -12,7 +13,7 @@ public interface ServerMessageListener {
 
     void onMessageSent(String user);
 
-    void onUserList(List<String> users);
+    void onUserList(List<UserListOutMessage.User> users);
 
     void onNewMessage(String sender, String message, boolean userOnline, long timestamp);
 

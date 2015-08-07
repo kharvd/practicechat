@@ -55,7 +55,7 @@ public class CommandReader {
                             handler.onDisconnect();
                             break;
                         case "list":
-                            handler.onList();
+                            parseListCommand();
                             break;
                         case "send":
                             parseSendMsgCommand();
@@ -85,6 +85,19 @@ public class CommandReader {
         }
 
         handler.onExit();
+    }
+
+    private void parseListCommand() throws IOException {
+        String roomName = null;
+        if (tok.nextToken() == StreamTokenizer.TT_WORD) {
+            roomName = tok.sval;
+        }
+
+        if (roomName != null && !roomName.startsWith("#")) {
+            roomName = "#" + tok.sval;
+        }
+
+        handler.onList(roomName);
     }
 
     private void parseHistoryCommand() throws IOException {

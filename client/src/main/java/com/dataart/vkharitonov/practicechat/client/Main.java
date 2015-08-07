@@ -3,6 +3,7 @@ package com.dataart.vkharitonov.practicechat.client;
 import com.dataart.vkharitonov.practicechat.client.cli.CommandHandler;
 import com.dataart.vkharitonov.practicechat.client.cli.CommandReader;
 import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
+import com.dataart.vkharitonov.practicechat.common.json.UserListOutMessage;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,7 +25,8 @@ public class Main {
     private static void showHelp() {
         System.out.println("Available commands: \n" +
                 "    connect <user>@<host>:<port> <password> - connects <user> to <host>:<port>\n" +
-                "    list - lists users currently connected to the server\n" +
+                "    list [#<room>] - lists users currently connected to the server, or, \n" +
+                "        if room is specified, members of the room\n" +
                 "    send <username> \"<message>\" - sends <message> to <username>\n" +
                 "    history <username> - lists message history with user <username>\n" +
                 "    join #<room> - joins the room\n" +
@@ -62,10 +64,10 @@ public class Main {
         }
 
         @Override
-        public void onList() {
+        public void onList(String roomName) {
             if (checkConnection()) {
                 try {
-                    connection.listUsers();
+                    connection.listUsers(roomName);
                 } catch (IOException e) {
                     System.out.println("Couldn't send message to the server. Disconnecting");
                     connection.disconnect();
@@ -160,7 +162,7 @@ public class Main {
         }
 
         @Override
-        public void onUserList(List<String> users) {
+        public void onUserList(List<UserListOutMessage.User> users) {
             System.out.format("Online users: %s%n", users);
         }
 
@@ -183,9 +185,9 @@ public class Main {
         @Override
         public void onRoomJoined(String roomName, boolean roomExists) {
             if (roomExists) {
-                System.out.format("Joined room %s", roomName);
+                System.out.format("Joined room %s%n", roomName);
             } else {
-                System.out.format("Created room %s", roomName);
+                System.out.format("Created room %s%n", roomName);
             }
         }
 
@@ -194,6 +196,4 @@ public class Main {
             System.out.println("Server has disconnected");
         }
     }
-
-
 }

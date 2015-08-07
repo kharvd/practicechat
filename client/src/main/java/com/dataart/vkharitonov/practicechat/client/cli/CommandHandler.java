@@ -3,7 +3,7 @@ package com.dataart.vkharitonov.practicechat.client.cli;
 public interface CommandHandler {
     void onConnect(String username, String password, String host, int port);
 
-    void onList();
+    void onList(String roomName);
 
     void onSendMessage(String username, String message);
 

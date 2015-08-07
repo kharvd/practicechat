@@ -71,8 +71,12 @@ public class ChatConnection {
      * Sends `list_users` message to the server
      * @throws IOException
      */
-    public void listUsers() throws IOException {
-        sendMessage(Message.MessageType.LIST_USERS, null);
+    public void listUsers(String roomName) throws IOException {
+        if (roomName == null) {
+            sendMessage(Message.MessageType.LIST_USERS, null);
+        } else {
+            sendMessage(Message.MessageType.LIST_USERS, new ListUsersInMessage(roomName));
+        }
     }
 
     public void getHistory(String username) throws IOException {

@@ -17,12 +17,11 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 /**
  * Maintains a list of connected clients. Passes messages between users.
@@ -114,9 +113,23 @@ public final class InteractorManager implements EventListener {
      */
     @Subscribe
     private void handleListUsersRequest(ListUsersRequest message) {
-        ClientInteractor clientInteractor = clients.get(message.getSender());
-        if (clientInteractor != null) {
-            clientInteractor.post(new UserListOutMessage(clients.keySet()));
+        if (message.getRoomName().isPresent()) {
+            getRoomDao().getUsersForRoom(message.getRoomName().get())
+                        .thenAcceptAsync(usernames ->
+                                sendListUsersResult(message.getSender(), usernames), eventQueue.executor());
+        } else {
+            sendListUsersResult(message.getSender(), clients.keySet());
+        }
+    }
+
+    private void sendListUsersResult(String sender, Collection<String> usernames) {
+        List<UserListOutMessage.User> users =
+                usernames.stream()
+                         .map(username -> new UserListOutMessage.User(username, clients.containsKey(username)))
+                         .collect(Collectors.toList());
+
+        if (clients.containsKey(sender)) {
+            clients.get(sender).post(new UserListOutMessage(users));
         }
     }
 

@@ -1,5 +1,6 @@
 package com.dataart.vkharitonov.practicechat.server.db;
 
+import org.apache.commons.dbutils.handlers.ArrayListHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,6 +8,7 @@ import javax.sql.DataSource;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class RoomDao extends Dao<RoomDto> {
 
@@ -41,6 +43,16 @@ public class RoomDao extends Dao<RoomDto> {
 
             log.debug("user joined");
             return null;
+        });
+    }
+
+    public CompletableFuture<List<String>> getUsersForRoom(String roomName) {
+        return supplyAsync(connection -> {
+            String query = "SELECT username FROM room_members WHERE room = ?;";
+            return getQueryRunner().query(connection, query, new ArrayListHandler(), roomName)
+                                   .stream()
+                                   .map(arr -> ((String) arr[0]))
+                                   .collect(Collectors.toList());
         });
     }
 }

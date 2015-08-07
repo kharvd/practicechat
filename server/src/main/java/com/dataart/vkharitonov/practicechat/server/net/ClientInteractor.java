@@ -171,7 +171,12 @@ public final class ClientInteractor implements EventListener {
             if (message.getMessageType() != null) {
                 switch (message.getMessageType()) {
                     case LIST_USERS:
-                        interactorManager.post(new ListUsersRequest(username));
+                        if (message.getPayload() == null || message.getPayload().isJsonNull()) {
+                            interactorManager.post(new ListUsersRequest(username));
+                        } else {
+                            ListUsersInMessage listUsersInMessage = JsonUtils.GSON.fromJson(message.getPayload(), ListUsersInMessage.class);
+                            interactorManager.post(new ListUsersRequest(username, listUsersInMessage.getRoomName()));
+                        }
                         break;
                     case DISCONNECT:
                         messageProducer.stop();
