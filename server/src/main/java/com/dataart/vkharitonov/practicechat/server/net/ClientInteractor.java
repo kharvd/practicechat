@@ -132,6 +132,11 @@ public final class ClientInteractor implements EventListener {
         sendMessageToClient(Message.MessageType.MESSAGE_HISTORY, message);
     }
 
+    @Subscribe
+    private void sendJoinedResult(RoomJoinedOutMessage message) {
+        sendMessageToClient(Message.MessageType.ROOM_JOINED, message);
+    }
+
     private <T> CompletableFuture<Void> sendMessageToClient(Message.MessageType type, T payload) {
         Message message = new Message(type, payload);
         String json = JsonUtils.GSON.toJson(message);
@@ -178,6 +183,10 @@ public final class ClientInteractor implements EventListener {
                     case GET_HISTORY:
                         GetHistoryInMessage getHistoryMessage = JsonUtils.GSON.fromJson(message.getPayload(), GetHistoryInMessage.class);
                         interactorManager.post(new HistoryRequest(username, getHistoryMessage.getUsername()));
+                        break;
+                    case JOIN_ROOM:
+                        JoinRoomInMessage joinRoomMessage = JsonUtils.GSON.fromJson(message.getPayload(), JoinRoomInMessage.class);
+                        interactorManager.post(new JoinRoomRequest(username, joinRoomMessage.getRoomName()));
                         break;
                     default:
                         log.warn("Unexpected message from {}", username);

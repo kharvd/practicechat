@@ -17,6 +17,7 @@ public class DbHelper {
 
     private ChatMsgDao chatMsgDao;
     private UserDao userDao;
+    private RoomDao roomDao;
 
     private DbHelper(String dbName, String serverName, String username, String password) {
         dataSource = new PGPoolingDataSource();
@@ -51,6 +52,11 @@ public class DbHelper {
                 instance.userDao = null;
             }
 
+            if (instance.roomDao != null) {
+                instance.roomDao.close();
+                instance.roomDao = null;
+            }
+
             if (dbExecutor != null) {
                 dbExecutor.shutdown();
             }
@@ -82,5 +88,13 @@ public class DbHelper {
         }
 
         return userDao;
+    }
+
+    public synchronized RoomDao getRoomDao() {
+        if (roomDao == null) {
+            roomDao = new RoomDao(dataSource);
+        }
+
+        return roomDao;
     }
 }

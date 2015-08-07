@@ -18,6 +18,8 @@ public interface ServerMessageListener {
 
     void onMessageHistory(List<ChatMsg> messages);
 
+    void onRoomJoined(String roomName, boolean roomExists);
+
     /**
      * Server disconnected. No more messages are expected after this point
      */

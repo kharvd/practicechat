@@ -48,6 +48,15 @@ public class Message {
         @SerializedName("get_history")
         GET_HISTORY,
 
+        @SerializedName("join_room")
+        JOIN_ROOM,
+
+        @SerializedName("drop_room")
+        DROP_ROOM,
+
+        @SerializedName("leave_room")
+        LEAVE_ROOM,
+
         // Outgoing messages
 
         @SerializedName("connection_result")
@@ -63,6 +72,9 @@ public class Message {
         MESSAGE_SENT,
 
         @SerializedName("message_history")
-        MESSAGE_HISTORY
+        MESSAGE_HISTORY,
+
+        @SerializedName("room_joined")
+        ROOM_JOINED
     }
 }

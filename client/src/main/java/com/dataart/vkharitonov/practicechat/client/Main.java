@@ -27,6 +27,7 @@ public class Main {
                 "    list - lists users currently connected to the server\n" +
                 "    send <username> \"<message>\" - sends <message> to <username>\n" +
                 "    history <username> - lists message history with user <username>\n" +
+                "    join #<room> - joins the room\n" +
                 "    disconnect - disconnects from the server\n" +
                 "    help - show this help message\n" +
                 "    exit - exit the application");
@@ -89,6 +90,18 @@ public class Main {
             if (checkConnection()) {
                 try {
                     connection.getHistory(username);
+                } catch (IOException e) {
+                    System.out.println("Couldn't send message to the server. Disconnecting");
+                    connection.disconnect();
+                }
+            }
+        }
+
+        @Override
+        public void onJoin(String roomName) {
+            if (checkConnection()) {
+                try {
+                    connection.joinRoom(roomName);
                 } catch (IOException e) {
                     System.out.println("Couldn't send message to the server. Disconnecting");
                     connection.disconnect();
@@ -164,6 +177,15 @@ public class Main {
                 for (ChatMsg message : messages) {
                     onNewMessage(message.getSender(), message.getMessage(), false, message.getTimestamp());
                 }
+            }
+        }
+
+        @Override
+        public void onRoomJoined(String roomName, boolean roomExists) {
+            if (roomExists) {
+                System.out.format("Joined room %s", roomName);
+            } else {
+                System.out.format("Created room %s", roomName);
             }
         }
 

@@ -79,6 +79,9 @@ public class ChatConnection {
         sendMessage(Message.MessageType.GET_HISTORY, new GetHistoryInMessage(username));
     }
 
+    public void joinRoom(String name) throws IOException {
+        sendMessage(Message.MessageType.JOIN_ROOM, new JoinRoomInMessage(name));
+    }
     /**
      * Sends `send_message` message to the server
      * @param destination user to send this message to
@@ -129,6 +132,11 @@ public class ChatConnection {
         listener.onMessageHistory(msg.getMessages());
     }
 
+    private void handleRoomJoined(Message message) {
+        RoomJoinedOutMessage msg = JsonUtils.GSON.fromJson(message.getPayload(), RoomJoinedOutMessage.class);
+        listener.onRoomJoined(msg.getRoomName(), msg.isRoomExists());
+    }
+
     private class MessageConsumer implements MessageProducer.Consumer {
         @Override
         public void onNext(Message message) {
@@ -147,6 +155,9 @@ public class ChatConnection {
                     break;
                 case MESSAGE_HISTORY:
                     handleMessageHistory(message);
+                    break;
+                case ROOM_JOINED:
+                    handleRoomJoined(message);
                     break;
                 default:
                     break;

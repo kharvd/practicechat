@@ -30,7 +30,8 @@ Every message is a JSON object that contains two fields:
 
 #### connect
 Tries to login the user with the specified username and password. If the user doesn't exist, registers them.
-Username cannot contain spaces. This message must be sent by the client within 
+Username cannot contain spaces. This message must be sent by the client within 1 second after 
+the socket connection has been established.
 
 Payload example:
 
@@ -47,7 +48,7 @@ Disconnects currently connected user from the server.
 Payload must be `null`.
 
 #### send_message
-Sends a message to the specified user.
+Sends a message to the specified user or the room (if the username starts with '\#').
 
 Payload example:
 
@@ -57,18 +58,58 @@ Payload example:
         }
 
 #### get_history
-Requests message history with the specified user
+Requests message history with the specified user or the room (if the username starts with '\#')
 
 Payload example:
 
         {
             "username": "NAGibaTOR_40k"
         }
+        
+#### join_room
+Joins a room. Room name must start with a hash sign ('\#'). If the room doesn't exist, it is created and
+the current user becomes its administrator
+
+Payload example:
+
+        {
+            "name": "#java_devs"
+        }
+        
+#### drop_room
+Deletes a room. Current user must be the administrator of the room to be able to drop it
+
+Payload example:
+
+        {
+            "name": "#java_devs"
+        }
+        
+#### leave_room
+Current user is removed from the specified room
+
+Payload example:
+
+        {
+            "name": "#dotnet_devs"
+        }
+
 
 #### list_users
-Ask the server to return the list of all currently connected users.
+If the payload is null, asks the server to return the list of all online users. If the payload contains the room name,
+server returns the list of all users who joined the room.
+
+Payload example:
+
+        {
+            "name": "#java_devs"
+        }
+
+#### list_rooms
+Asks the server to return the list of all existing rooms.
 
 Payload must be `null`.
+
 
 ### Server-to-Client messages
 
@@ -90,6 +131,35 @@ Payload example (failure):
             "success": false,
             "user_exists": true
         }
+        
+#### room_joined
+Response to `join_room` request. `room_exists` is true, if the user connects to the existing room.
+
+Payload example:
+
+        {
+            "room_name": "#java_devs",
+            "room_exists": false
+        }
+        
+        
+#### room_dropped
+Response to `drop_room` request. `success` is false, if the user is not the administrator of the room.
+
+Payload example:
+
+        {
+            "success": true
+        }
+        
+#### room_left
+Response to `leave_room` request. `success` is false, if the user is not a member of the room.
+
+Payload example:
+
+        {
+            "success": true
+        }
 
 #### user_list
 Sent by the server as a response to `list_users` command.
@@ -97,9 +167,19 @@ Sent by the server as a response to `list_users` command.
 Payload example:
 
         {
-            "users": ["john_doe1952", "NAGibaTOR_40k"]
+            "users": [
+                {
+                    "username": "john_doe1952",
+                    "online": true
+                },
+                {
+                    "username": "NAGibaTOR_40k",
+                    "online": true
+                }
+            ]
         }
-
+        
+        
 #### message_sent
 Sent by a server as an acknowledgement of the message delivery by a user.
 
@@ -111,18 +191,21 @@ Payload example:
 
 #### new_message
 Sent by the server when some user sends a message to the current user. Timestamp is in milliseconds.
+If `room` parameter is not `null`, the message was sent to a room.
 
 Payload example:
 
         {
             "username": "NAGibaTOR_40k",
+            "room": null,
             "online": true,
             "message": "sup m8",
             "timestamp": 1438182184000
         }
 
 #### message_history
-Sent by the server as a response to `get_history` command.
+Sent by the server as a response to `get_history` command. If the user requested a room's message history,
+`destination` always contains the room's name. 
 
 Payload example:
 

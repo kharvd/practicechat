@@ -2,10 +2,7 @@ package com.dataart.vkharitonov.practicechat.server.net;
 
 import com.dataart.vkharitonov.practicechat.common.json.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
-import com.dataart.vkharitonov.practicechat.server.db.ChatMsgDao;
-import com.dataart.vkharitonov.practicechat.server.db.DbHelper;
-import com.dataart.vkharitonov.practicechat.server.db.UserDao;
-import com.dataart.vkharitonov.practicechat.server.db.UserDto;
+import com.dataart.vkharitonov.practicechat.server.db.*;
 import com.dataart.vkharitonov.practicechat.server.event.*;
 import com.dataart.vkharitonov.practicechat.server.queue.EventListener;
 import com.dataart.vkharitonov.practicechat.server.queue.EventQueue;
@@ -23,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -132,6 +130,24 @@ public final class InteractorManager implements EventListener {
                    }, eventQueue.executor());
     }
 
+    @Subscribe
+    private void handleJoinRoomRequest(JoinRoomRequest request) {
+        String user = request.getSender();
+        String roomName = request.getRoomName();
+
+        joinUserToRoomOrCreate(roomName, user).thenAcceptAsync(roomExists -> {
+            if (roomExists) {
+                log.info("User {} joined room {}", user, roomName);
+            } else {
+                log.info("User {} created room {}", user, roomName);
+            }
+
+            if (clients.containsKey(user)) {
+                clients.get(user).post(new RoomJoinedOutMessage(roomName, roomExists));
+            }
+        }, eventQueue.executor());
+    }
+
     /**
      * Registers a new user
      */
@@ -210,6 +226,19 @@ public final class InteractorManager implements EventListener {
         }
     }
 
+    /**
+     * @return Future with boolean which tells if the room already exists
+     */
+    private CompletableFuture<Boolean> joinUserToRoomOrCreate(String roomName, String user) {
+        return getRoomDao().getRoomAdmin(roomName).thenCompose(adminOptional -> {
+            if (adminOptional.isPresent()) {
+                return getRoomDao().addUserToRoom(roomName, user).thenApply(o -> true);
+            } else {
+                return getRoomDao().createRoom(roomName, user).thenApply(o -> false);
+            }
+        });
+    }
+
     private void sendUndeliveredMsgs(String username) {
         getMsgDao().getUndeliveredMsgsForUser(username)
                    .thenAcceptAsync(undeliveredMsgs -> undeliveredMsgs.forEach(sendMsgRequest -> {
@@ -244,5 +273,9 @@ public final class InteractorManager implements EventListener {
 
     private UserDao getUserDao() {
         return DbHelper.getInstance().getUserDao();
+    }
+
+    private RoomDao getRoomDao() {
+        return DbHelper.getInstance().getRoomDao();
     }
 }

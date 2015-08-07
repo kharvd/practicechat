@@ -63,6 +63,9 @@ public class CommandReader {
                         case "history":
                             parseHistoryCommand();
                             break;
+                        case "join":
+                            parseJoinCommand();
+                            break;
                         case "help":
                             handler.onHelp();
                             break;
@@ -92,6 +95,21 @@ public class CommandReader {
         }
 
         handler.onHistory(tok.sval);
+    }
+
+    private void parseJoinCommand() throws IOException {
+        final String joinSyntaxString = "Syntax: join #<room>";
+
+        if (tok.nextToken() != StreamTokenizer.TT_WORD) {
+            throw new IllegalArgumentException(joinSyntaxString);
+        }
+
+        String roomName = tok.sval;
+        if (!roomName.startsWith("#")) {
+            roomName = "#" + tok.sval;
+        }
+
+        handler.onJoin(roomName);
     }
 
     private void parseSendMsgCommand() throws IOException, IllegalArgumentException {

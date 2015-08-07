@@ -9,6 +9,8 @@ public interface CommandHandler {
 
     void onHistory(String username);
 
+    void onJoin(String roomName);
+
     void onDisconnect();
 
     void onExit();
