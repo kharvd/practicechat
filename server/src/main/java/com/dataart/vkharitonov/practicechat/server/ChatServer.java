@@ -1,7 +1,6 @@
 package com.dataart.vkharitonov.practicechat.server;
 
 import com.dataart.vkharitonov.practicechat.server.db.DbHelper;
-import com.dataart.vkharitonov.practicechat.server.event.ShutdownCommand;
 import com.dataart.vkharitonov.practicechat.server.net.ConnectionManager;
 import com.dataart.vkharitonov.practicechat.server.net.InteractorManager;
 import org.slf4j.Logger;
@@ -44,7 +43,7 @@ public class ChatServer {
 
     public void stop() {
         connectionManager.stop();
-        interactorManager.post(new ShutdownCommand());
+        interactorManager.shutdown();
         DbHelper.close();
     }
 

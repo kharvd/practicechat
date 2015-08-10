@@ -147,6 +147,6 @@ public class CommandReader {
         handler.onConnect(matcher.group("username"),
                 matcher.group("password"),
                 matcher.group("host"),
-                Integer.valueOf(matcher.group("port")));
+                Integer.parseInt(matcher.group("port")));
     }
 }

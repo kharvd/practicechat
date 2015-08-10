@@ -1,8 +1,6 @@
 package com.dataart.vkharitonov.practicechat.server.db;
 
 import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
-import com.dataart.vkharitonov.practicechat.common.json.SendMsgInMessage;
-import com.dataart.vkharitonov.practicechat.server.event.SendMsgRequest;
 
 import java.sql.Timestamp;
 
@@ -14,6 +12,14 @@ public class ChatMsgDto {
     private boolean delivered;
 
     public ChatMsgDto() {
+    }
+
+    public ChatMsgDto(String sender, String destination, String message, long timestamp, boolean delivered) {
+        this.sender = sender;
+        this.destination = destination;
+        this.message = message;
+        this.sendingTime = new Timestamp(timestamp);
+        this.delivered = delivered;
     }
 
     public String getSender() {
@@ -54,10 +60,6 @@ public class ChatMsgDto {
 
     public void setDelivered(boolean delivered) {
         this.delivered = delivered;
-    }
-
-    public SendMsgRequest toSendMsgRequest() {
-        return new SendMsgRequest(sender, sendingTime.getTime(), new SendMsgInMessage(destination, message));
     }
 
     public ChatMsg toChatMsg() {

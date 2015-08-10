@@ -12,7 +12,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class Dao<T> {
+class Dao<T> {
 
     private final static Logger log = LoggerFactory.getLogger(Dao.class.getName());
 
@@ -21,29 +21,29 @@ public class Dao<T> {
 
     private ResultSetHandler<List<T>> resultSetHandler;
 
-    public Dao(DataSource dataSource, Class<T> cls) {
+    Dao(DataSource dataSource, Class<T> cls) {
         queryRunner = new QueryRunner();
         resultSetHandler = new BeanListHandler<>(cls);
         this.dataSource = dataSource;
     }
 
-    protected void close() {
+    void close() {
         DbHelper.getDbExecutor().shutdown();
     }
 
-    protected DataSource getDataSource() {
+    private DataSource getDataSource() {
         return dataSource;
     }
 
-    protected QueryRunner getQueryRunner() {
+    QueryRunner getQueryRunner() {
         return queryRunner;
     }
 
-    protected ResultSetHandler<List<T>> getDefaultResultSetHandler() {
+    ResultSetHandler<List<T>> getDefaultResultSetHandler() {
         return resultSetHandler;
     }
 
-    protected <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
+    <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
         return CompletableFuture.supplyAsync(() -> {
             try (Connection conn = getDataSource().getConnection()) {
                 return supplier.get(conn);
@@ -51,12 +51,12 @@ public class Dao<T> {
                 throw new RuntimeException(e);
             }
         }, DbHelper.getDbExecutor()).exceptionally(e -> {
-            log.error("Error during DB query", e);
-            return null;
+            log.error("Error during DB query: {}", e.getLocalizedMessage());
+            throw new RuntimeException(e);
         });
     }
 
-    protected interface Supplier<U> {
+    interface Supplier<U> {
         U get(Connection connection) throws SQLException;
     }
 }

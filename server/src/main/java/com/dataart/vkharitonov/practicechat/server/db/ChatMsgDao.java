@@ -2,7 +2,6 @@ package com.dataart.vkharitonov.practicechat.server.db;
 
 import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
 import com.dataart.vkharitonov.practicechat.common.json.MsgHistoryOutMessage;
-import com.dataart.vkharitonov.practicechat.server.event.SendMsgRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,11 +14,11 @@ public class ChatMsgDao extends Dao<ChatMsgDto> {
 
     private final static Logger log = LoggerFactory.getLogger(ChatMsgDao.class.getName());
 
-    protected ChatMsgDao(DataSource dataSource) {
+    ChatMsgDao(DataSource dataSource) {
         super(dataSource, ChatMsgDto.class);
     }
 
-    public CompletableFuture<List<SendMsgRequest>> getUndeliveredMsgsForUser(String username) {
+    public CompletableFuture<List<ChatMsgDto>> getUndeliveredMsgsForUser(String username) {
         return supplyAsync(connection -> {
             String query = "SELECT sender, destination, message, delivered, sending_time AS sendingTime\n" +
                     "FROM messages\n" +
@@ -28,20 +27,19 @@ public class ChatMsgDao extends Dao<ChatMsgDto> {
 
             return getQueryRunner().query(connection, query, getDefaultResultSetHandler(), username)
                                    .stream()
-                                   .map(ChatMsgDto::toSendMsgRequest)
                                    .collect(Collectors.toList());
         });
     }
 
-    public CompletableFuture<Void> addUndeliveredMsg(SendMsgRequest request) {
+    public CompletableFuture<Void> addUndeliveredMsg(ChatMsgDto chatMsg) {
         return supplyAsync(connection -> {
             String insert = "INSERT INTO messages(sender, destination, message, sending_time, delivered) \n" +
                     "VALUES (?, ?, ?, to_timestamp(?), FALSE);";
             getQueryRunner().insert(connection, insert, getDefaultResultSetHandler(),
-                    request.getSender(),
-                    request.getMessage().getUsername(),
-                    request.getMessage().getMessage(),
-                    request.getTimestamp() / 1000.0);
+                    chatMsg.getSender(),
+                    chatMsg.getDestination(),
+                    chatMsg.getMessage(),
+                    chatMsg.getSendingTime().getTime() / 1000.0);
 
             return null;
         });

@@ -3,8 +3,6 @@ package com.dataart.vkharitonov.practicechat.server.net;
 import com.dataart.vkharitonov.practicechat.common.json.ConnectInMessage;
 import com.dataart.vkharitonov.practicechat.common.json.Message;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
-import com.dataart.vkharitonov.practicechat.server.event.ConnectionEvent;
-import com.dataart.vkharitonov.practicechat.server.queue.EventListener;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import org.apache.commons.net.io.Util;
@@ -30,7 +28,7 @@ public final class ConnectionManager {
     private final static int MAX_CONNECTION_POOL = 10;
     private final static int CONNECT_MESSAGE_TIMEOUT = 1000;
     private ServerSocket server;
-    private EventListener connectionListener;
+    private InteractorManager interactorManager;
     private ExecutorService executor;
     private WorkerThread workerThread;
 
@@ -38,13 +36,12 @@ public final class ConnectionManager {
      * Starts listening to incoming client connections.
      *
      * @param port               the port number
-     * @param connectionListener must handle {@link ConnectionEvent} messages
      * @throws IOException thrown if couldn't create server socket
      */
-    public void start(int port, EventListener connectionListener) throws IOException {
+    public void start(int port, InteractorManager connectionListener) throws IOException {
         server = new ServerSocket(port);
 
-        this.connectionListener = connectionListener;
+        this.interactorManager = connectionListener;
 
         executor = Executors.newFixedThreadPool(MAX_CONNECTION_POOL);
         workerThread = new WorkerThread();
@@ -85,7 +82,7 @@ public final class ConnectionManager {
 
                 if (message.getMessageType() == Message.MessageType.CONNECT) {
                     ConnectInMessage connectMessage = message.getPayload(ConnectInMessage.class);
-                    connectionListener.post(new ConnectionEvent(connectMessage, client));
+                    interactorManager.connectUser(connectMessage.getUsername(), connectMessage.getPassword(), client);
                 } else {
                     throw new JsonSyntaxException("First message should be `connect`");
                 }
