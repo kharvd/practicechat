@@ -54,12 +54,18 @@ public final class ClientInteractor {
         messageProducer.start(clientSocket.getInputStream(), new MessageConsumer());
     }
 
+    /**
+     * Send new message to the client
+     *
+     * @return {@link CompletableFuture} that completes as soon as the message is sent
+     */
     public CompletableFuture<Void> sendNewMessage(NewMsgOutMessage message) {
         return sendMessageToClient(Message.MessageType.NEW_MESSAGE, message);
     }
 
     /**
      * Sends "message sent" acknowledgement to the current user
+     * @return {@link CompletableFuture} that completes as soon as the message is sent
      */
     public CompletableFuture<Void> sendMsgSentMessage(MsgSentOutMessage message) {
         return sendMessageToClient(Message.MessageType.MESSAGE_SENT, message);
@@ -67,9 +73,20 @@ public final class ClientInteractor {
 
     /**
      * Sends an acknowledgement to the newly connected user
+     * @return {@link CompletableFuture} that completes as soon as the message is sent
      */
     public CompletableFuture<Void> sendConnectMessage(ConnectionResultOutMessage message) {
         return sendMessageToClient(Message.MessageType.CONNECTION_RESULT, message);
+    }
+
+    /**
+     * Shuts down the interactor and disconnects the user
+     */
+    public void shutdown() {
+        isShutdown = true;
+        executor.shutdown();
+        messageProducer.stop();
+        closeConnection();
     }
 
     private CompletableFuture<Void> sendHistory(MsgHistoryOutMessage message) {
@@ -84,13 +101,6 @@ public final class ClientInteractor {
         Message message = new Message(type, payload);
         String json = JsonUtils.GSON.toJson(message);
         return CompletableFuture.runAsync(() -> writeToClient(json), executor);
-    }
-
-    public void shutdown() {
-        isShutdown = true;
-        executor.shutdown();
-        messageProducer.stop();
-        closeConnection();
     }
 
     private void closeConnection() {
@@ -135,7 +145,7 @@ public final class ClientInteractor {
     private void handleSendMessageRequest(Message message) {
         SendMsgInMessage msg = message.getPayload(SendMsgInMessage.class);
         if (msg != null) {
-            interactorManager.sendMessage(username, System.currentTimeMillis(), msg);
+            interactorManager.sendMessage(username, msg.getUsername(), msg.getMessage(), System.currentTimeMillis());
         }
     }
 

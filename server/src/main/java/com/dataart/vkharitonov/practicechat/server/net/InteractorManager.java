@@ -34,15 +34,30 @@ public final class InteractorManager {
     public InteractorManager() {
     }
 
+    /**
+     * Disconnects user with {@code username}
+     */
     public void disconnect(String username) {
         clients.removeInteractor(username).thenRunAsync(() -> log.info("User {} has disconnected", username));
     }
 
-    public CompletableFuture<Boolean> sendMessage(String sender, long timestamp, SendMsgInMessage sendMessage) {
-        getMsgDao().addUndeliveredMsg(new ChatMsgDto(sender, sendMessage.getUsername(), sendMessage.getMessage(), timestamp, false));
-        return sendMessageToClient(sender, sendMessage.getUsername(), sendMessage.getMessage(), timestamp);
+    /**
+     * Sends message to {@code destination} from {@code sender} with text {@code message} and {@code timestamp}.
+     * Adds the message to message history
+     *
+     * @return {@link CompletableFuture} that completes as soon as the message is sent
+     */
+    public CompletableFuture<Boolean> sendMessage(String sender, String destination, String message, long timestamp) {
+        return getMsgDao().addUndeliveredMsg(new ChatMsgDto(sender, destination, message, timestamp, false))
+                          .thenComposeAsync(aVoid -> sendMessageToClient(sender, destination, message, timestamp));
     }
 
+    /**
+     * Returns user list for room if {@code roomName} contains a name, and a list of all online users otherwise
+     *
+     * @param roomName optional room name
+     * @return {@link CompletableFuture} that completes with the {@link UserListOutMessage}
+     */
     public CompletableFuture<UserListOutMessage> listUsers(Optional<String> roomName) {
         CompletableFuture<List<String>> usernamesFuture;
         usernamesFuture = roomName.isPresent()
@@ -52,10 +67,21 @@ public final class InteractorManager {
         return usernamesFuture.thenApplyAsync(this::wrapListUsersResult);
     }
 
+    /**
+     * Returns message history between {@code sender} and {@code partner}
+     *
+     * @return {@link CompletableFuture} that completes with the {@link MsgHistoryOutMessage}
+     */
     public CompletableFuture<MsgHistoryOutMessage> getHistory(String sender, String partner) {
         return getMsgDao().getHistoryForUsers(sender, partner);
     }
 
+    /**
+     * Joins user {@code user} to room {@code roomName} if it exists.
+     * Otherwise creates such room and makes the {@code user} its administrator.
+     *
+     * @return {@link CompletableFuture} that completes with the {@link RoomJoinedOutMessage}
+     */
     public CompletableFuture<RoomJoinedOutMessage> joinRoom(String user, String roomName) {
         return joinUserToRoomOrCreate(roomName, user).thenApplyAsync(roomExists -> {
             if (roomExists) {
@@ -68,6 +94,9 @@ public final class InteractorManager {
         });
     }
 
+    /**
+     * Tries to connect new user to the server. If the user doesn't exist, new account is created.
+     */
     public void connectUser(String username, String password, Socket client) {
         getUserDao().getUserByName(username).thenComposeAsync(userDtoOptional -> {
             if (userDtoOptional.isPresent()) {
@@ -98,10 +127,26 @@ public final class InteractorManager {
         });
     }
 
+    /**
+     * Shuts down this manager, disconnecting all users
+     */
+    public CompletableFuture<Void> shutdown() {
+        return clients.removeAllAndShutdown().thenAcceptAsync(clientInteractors ->
+                clientInteractors.forEach(ClientInteractor::shutdown));
+    }
+
+    /**
+     * Creates new user interactor
+     *
+     * @param userExists false, if the user was just created
+     * @return {@link CompletableFuture} with {@link ConnectionResult} that contains the {@link ClientInteractor} and
+     * boolean {@code userExists}
+     */
     private CompletableFuture<ConnectionResult> addInteractor(String username, Socket client, boolean userExists) {
         try {
             ClientInteractor clientInteractor = new ClientInteractor(username, client, this);
             return clients.addInteractor(username, clientInteractor).thenApplyAsync(prevInteractor -> {
+                // If user already connected, shutdown the old connection.
                 if (prevInteractor != null) {
                     prevInteractor.shutdown();
                 }
@@ -109,10 +154,14 @@ public final class InteractorManager {
                 return new ConnectionResult(clientInteractor, userExists);
             });
         } catch (IOException e) {
+            // Couldn't connect to the user
             return FutureUtils.failure(e);
         }
     }
 
+    /**
+     * Checks if the {@code password} is correct for the {@code user}
+     */
     private boolean authenticateUser(UserDto user, String password) {
         String salt = user.getSalt();
         String hash = HashUtils.hash(password, salt);
@@ -120,11 +169,11 @@ public final class InteractorManager {
         return Objects.equals(hash, user.getHash());
     }
 
-    public void shutdown() {
-        clients.removeAllAndShutdown().thenAcceptAsync(clientInteractors ->
-                clientInteractors.forEach(ClientInteractor::shutdown));
-    }
-
+    /**
+     * Creates new user account in DB
+     *
+     * @return {@link CompletableFuture} that completes as soon as the user is created
+     */
     private CompletableFuture<Void> createUser(String username, String password) {
         String salt = HashUtils.newSalt();
         String hash = HashUtils.hash(password, salt);
@@ -132,6 +181,9 @@ public final class InteractorManager {
         return getUserDao().createUser(username, hash, salt);
     }
 
+    /**
+     * Sends new text message to the client
+     */
     private CompletableFuture<Boolean> sendMessageToClient(String sender, String destination, String message, long timestamp) {
         ClientInteractor interactor = clients.getInteractor(destination);
         if (interactor != null) {
@@ -165,11 +217,15 @@ public final class InteractorManager {
         });
     }
 
-    private void sendUndeliveredMsgs(String username) {
-        getMsgDao().getUndeliveredMsgsForUser(username)
-                   .thenAcceptAsync(undeliveredMsgs -> undeliveredMsgs.forEach(msg ->
-                           sendMessageToClient(msg.getSender(), username, msg.getMessage(), msg.getSendingTime()
-                                                                                               .getTime())));
+    /**
+     * Sends all undelivered messages to {@code username}
+     */
+    private CompletableFuture<Void> sendUndeliveredMsgs(String username) {
+        return getMsgDao().getUndeliveredMsgsForUser(username)
+                          .thenAcceptAsync(undeliveredMsgs ->
+                                  undeliveredMsgs.forEach(msg ->
+                                          sendMessageToClient(msg.getSender(), username, msg.getMessage(), msg.getSendingTime()
+                                                                                                              .getTime())));
     }
 
     /**
@@ -190,10 +246,11 @@ public final class InteractorManager {
     }
 
     private UserListOutMessage wrapListUsersResult(Collection<String> usernames) {
-        return new UserListOutMessage(
+        List<UserListOutMessage.User> userList =
                 usernames.stream()
                          .map(username -> new UserListOutMessage.User(username, clients.isOnline(username)))
-                         .collect(Collectors.toList()));
+                         .collect(Collectors.toList());
+        return new UserListOutMessage(userList);
     }
 
     private ChatMsgDao getMsgDao() {
@@ -208,6 +265,9 @@ public final class InteractorManager {
         return DbHelper.getInstance().getRoomDao();
     }
 
+    /**
+     * Result of connecting new user
+     */
     private static class ConnectionResult {
         private ClientInteractor clientInteractor;
         private boolean userExists;

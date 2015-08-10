@@ -13,6 +13,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+/**
+ * Maintains a list of connected users
+ */
 public class UserList {
 
     private final static Logger log = LoggerFactory.getLogger(UserList.class.getName());
