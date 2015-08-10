@@ -1,10 +1,14 @@
 package com.dataart.vkharitonov.practicechat.server.db;
 
+import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
+import com.dataart.vkharitonov.practicechat.common.json.MsgHistoryOutMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class RoomMsgDao extends Dao<RoomMsgDto> {
 
@@ -25,6 +29,18 @@ public class RoomMsgDao extends Dao<RoomMsgDto> {
                     roomMsg.getSendingTime().getTime() / 1000.0);
 
             return null;
+        });
+    }
+
+    public CompletableFuture<MsgHistoryOutMessage> getHistoryForRoom(String room) {
+        return supplyAsync(connection -> {
+            String query = "SELECT sender, room, message, sending_time AS sendingTime\n" +
+                    "FROM room_messages WHERE room = ?;";
+            List<ChatMsg> list = getQueryRunner().query(connection, query, getDefaultResultSetHandler(), room)
+                                                 .stream()
+                                                 .map(RoomMsgDto::toChatMsg)
+                                                 .collect(Collectors.toList());
+            return new MsgHistoryOutMessage(list);
         });
     }
 }

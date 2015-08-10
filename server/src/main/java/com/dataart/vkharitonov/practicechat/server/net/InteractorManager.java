@@ -87,12 +87,17 @@ public final class InteractorManager {
     }
 
     /**
-     * Returns message history between {@code sender} and {@code partner}
+     * Returns message history between {@code sender} and {@code partner}. If {@code partner} starts with '#' symbol,
+     * returns history of the whole room.
      *
      * @return {@link CompletableFuture} that completes with the {@link MsgHistoryOutMessage}
      */
     public CompletableFuture<MsgHistoryOutMessage> getHistory(String sender, String partner) {
-        return getMsgDao().getHistoryForUsers(sender, partner);
+        if (partner.startsWith("#")) {
+            return getRoomMsgDao().getHistoryForRoom(partner);
+        } else {
+            return getMsgDao().getHistoryForUsers(sender, partner);
+        }
     }
 
     /**

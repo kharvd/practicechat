@@ -24,7 +24,7 @@ public class CommandReader {
     private static final Pattern SEND_PATTERN = Pattern.compile("send\\s+(?<name>#?" + USERNAME_PATTERN + ")\\s+\"(?<message>.*)\"");
 
     private static final String HISTORY_SYNTAX_STRING = "Syntax: history <username>";
-    private static final Pattern HISTORY_PATTERN = Pattern.compile("history\\s+(?<name>" + USERNAME_PATTERN + ")");
+    private static final Pattern HISTORY_PATTERN = Pattern.compile("history\\s+(?<name>#?" + USERNAME_PATTERN + ")");
 
     private static final String JOIN_SYNTAX_STRING = "Syntax: join #<room>";
     private static final Pattern JOIN_PATTERN = Pattern.compile("join\\s+(?<roomName>#?" + USERNAME_PATTERN + ")");
