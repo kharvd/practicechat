@@ -5,6 +5,8 @@ public interface CommandHandler {
 
     void onList(String roomName);
 
+    void onRoomsList();
+
     void onSendMessage(String username, String message);
 
     void onHistory(String username);

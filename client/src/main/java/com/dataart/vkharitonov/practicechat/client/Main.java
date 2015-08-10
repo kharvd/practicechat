@@ -27,6 +27,7 @@ public class Main {
                 "    connect <user>@<host>:<port> <password> - connects <user> to <host>:<port>\n" +
                 "    list [#<room>] - lists users currently connected to the server, or, \n" +
                 "        if room is specified, members of the room\n" +
+                "    rooms - lists all available rooms\n" +
                 "    send <username> \"<message>\" - sends <message> to <username>\n" +
                 "    history <username> - lists message history with user <username>\n" +
                 "    join #<room> - joins the room\n" +
@@ -70,6 +71,18 @@ public class Main {
                     connection.listUsers(roomName);
                 } catch (IOException e) {
                     System.out.println("Couldn't send message to the server. Disconnecting");
+                    connection.disconnect();
+                }
+            }
+        }
+
+        @Override
+        public void onRoomsList() {
+            if (checkConnection()) {
+                try {
+                    connection.listRooms();
+                } catch (IOException e) {
+                    System.out.println("Couldn't send message. Disconnecting");
                     connection.disconnect();
                 }
             }
@@ -164,6 +177,11 @@ public class Main {
         @Override
         public void onUserList(List<UserListOutMessage.User> users) {
             System.out.format("Online users: %s%n", users);
+        }
+
+        @Override
+        public void onRoomList(List<String> rooms) {
+            System.out.format("%s%n", rooms);
         }
 
         @Override

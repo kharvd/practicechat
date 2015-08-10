@@ -65,6 +65,7 @@ public final class ClientInteractor {
 
     /**
      * Sends "message sent" acknowledgement to the current user
+     *
      * @return {@link CompletableFuture} that completes as soon as the message is sent
      */
     public CompletableFuture<Void> sendMsgSentMessage(MsgSentOutMessage message) {
@@ -73,6 +74,7 @@ public final class ClientInteractor {
 
     /**
      * Sends an acknowledgement to the newly connected user
+     *
      * @return {@link CompletableFuture} that completes as soon as the message is sent
      */
     public CompletableFuture<Void> sendConnectMessage(ConnectionResultOutMessage message) {
@@ -87,14 +89,6 @@ public final class ClientInteractor {
         executor.shutdown();
         messageProducer.stop();
         closeConnection();
-    }
-
-    private CompletableFuture<Void> sendHistory(MsgHistoryOutMessage message) {
-        return sendMessageToClient(Message.MessageType.MESSAGE_HISTORY, message);
-    }
-
-    private CompletableFuture<Void> sendJoinedResult(RoomJoinedOutMessage message) {
-        return sendMessageToClient(Message.MessageType.ROOM_JOINED, message);
     }
 
     private <T> CompletableFuture<Void> sendMessageToClient(Message.MessageType type, T payload) {
@@ -119,13 +113,13 @@ public final class ClientInteractor {
     private void handleJoinRoomRequest(Message message) {
         JoinRoomInMessage joinRoomMessage = message.getPayload(JoinRoomInMessage.class);
         interactorManager.joinRoom(username, joinRoomMessage.getRoomName())
-                         .thenAccept(ClientInteractor.this::sendJoinedResult);
+                         .thenAccept(msg -> sendMessageToClient(Message.MessageType.ROOM_JOINED, msg));
     }
 
     private void handleGetHistoryRequest(Message message) {
         GetHistoryInMessage getHistoryMessage = message.getPayload(GetHistoryInMessage.class);
         interactorManager.getHistory(username, getHistoryMessage.getUsername())
-                         .thenAccept(ClientInteractor.this::sendHistory);
+                         .thenAccept(msg -> sendMessageToClient(Message.MessageType.MESSAGE_HISTORY, msg));
     }
 
     private void handleListUsersRequest(Message message) {
@@ -147,6 +141,10 @@ public final class ClientInteractor {
         if (msg != null) {
             interactorManager.sendMessage(username, msg.getUsername(), msg.getMessage(), System.currentTimeMillis());
         }
+    }
+
+    private void handleListRoomsRequest() {
+        interactorManager.listRooms().thenAcceptAsync(msg -> sendMessageToClient(Message.MessageType.ROOM_LIST, msg));
     }
 
     /**
@@ -181,6 +179,9 @@ public final class ClientInteractor {
                     case JOIN_ROOM:
                         handleJoinRoomRequest(message);
                         break;
+                    case LIST_ROOMS:
+                        handleListRoomsRequest();
+                        break;
                     default:
                         log.warn("Unexpected message from {}", username);
                         break;
@@ -199,5 +200,4 @@ public final class ClientInteractor {
             disconnect();
         }
     }
-
 }

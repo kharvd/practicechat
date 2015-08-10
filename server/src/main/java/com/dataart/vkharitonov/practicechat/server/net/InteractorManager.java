@@ -67,6 +67,10 @@ public final class InteractorManager {
         return usernamesFuture.thenApplyAsync(this::wrapListUsersResult);
     }
 
+    public CompletableFuture<RoomListOutMessage> listRooms() {
+        return getRoomDao().getRooms().thenApply(RoomListOutMessage::new);
+    }
+
     /**
      * Returns message history between {@code sender} and {@code partner}
      *

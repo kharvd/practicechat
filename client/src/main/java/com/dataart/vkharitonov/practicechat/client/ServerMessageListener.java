@@ -15,6 +15,8 @@ public interface ServerMessageListener {
 
     void onUserList(List<UserListOutMessage.User> users);
 
+    void onRoomList(List<String> rooms);
+
     void onNewMessage(String sender, String message, boolean userOnline, long timestamp);
 
     void onMessageHistory(List<ChatMsg> messages);

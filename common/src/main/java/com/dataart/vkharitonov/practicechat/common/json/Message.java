@@ -52,6 +52,9 @@ public class Message {
         @SerializedName("get_history")
         GET_HISTORY,
 
+        @SerializedName("list_rooms")
+        LIST_ROOMS,
+
         @SerializedName("join_room")
         JOIN_ROOM,
 
@@ -68,6 +71,9 @@ public class Message {
 
         @SerializedName("user_list")
         USER_LIST,
+
+        @SerializedName("room_list")
+        ROOM_LIST,
 
         @SerializedName("new_message")
         NEW_MESSAGE,

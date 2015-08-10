@@ -67,6 +67,9 @@ public class CommandReader {
                     case "list":
                         parseListCommand(line);
                         break;
+                    case "rooms":
+                        handler.onRoomsList();
+                        break;
                     case "send":
                         parseSendMsgCommand(line);
                         break;

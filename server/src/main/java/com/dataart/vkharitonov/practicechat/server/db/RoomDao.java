@@ -55,4 +55,14 @@ public class RoomDao extends Dao<RoomDto> {
                                    .collect(Collectors.toList());
         });
     }
+
+    public CompletableFuture<List<String>> getRooms() {
+        return supplyAsync(connection -> {
+            String query = "SELECT name FROM rooms;";
+            return getQueryRunner().query(connection, query, new ArrayListHandler())
+                                   .stream()
+                                   .map(arr -> ((String) arr[0]))
+                                   .collect(Collectors.toList());
+        });
+    }
 }

@@ -179,6 +179,14 @@ Payload example:
             ]
         }
         
+#### room_list
+Sent by the server as a response to `list_rooms` command.
+        
+Payload example:
+
+        {
+            "rooms": ["#room1", "#room2"]
+        }
         
 #### message_sent
 Sent by a server as an acknowledgement of the message delivery by a user.

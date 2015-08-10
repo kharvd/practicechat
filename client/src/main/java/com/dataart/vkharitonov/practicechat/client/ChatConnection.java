@@ -79,6 +79,10 @@ public class ChatConnection {
         }
     }
 
+    public void listRooms() throws IOException {
+        sendMessage(Message.MessageType.LIST_ROOMS, null);
+    }
+
     public void getHistory(String username) throws IOException {
         sendMessage(Message.MessageType.GET_HISTORY, new GetHistoryInMessage(username));
     }
@@ -140,6 +144,11 @@ public class ChatConnection {
         listener.onRoomJoined(msg.getRoomName(), msg.isRoomExists());
     }
 
+    private void handleRoomList(Message message) {
+        RoomListOutMessage msg = message.getPayload(RoomListOutMessage.class);
+        listener.onRoomList(msg.getRooms());
+    }
+
     private class MessageConsumer implements MessageProducer.Consumer {
         @Override
         public void onNext(Message message) {
@@ -161,6 +170,9 @@ public class ChatConnection {
                     break;
                 case ROOM_JOINED:
                     handleRoomJoined(message);
+                    break;
+                case ROOM_LIST:
+                    handleRoomList(message);
                     break;
                 default:
                     break;
