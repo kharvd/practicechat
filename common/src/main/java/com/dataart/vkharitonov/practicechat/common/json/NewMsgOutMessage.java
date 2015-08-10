@@ -2,6 +2,7 @@ package com.dataart.vkharitonov.practicechat.common.json;
 
 public class NewMsgOutMessage {
 
+    private String room;
     private String username;
     private String message;
     private boolean online;
@@ -11,6 +12,13 @@ public class NewMsgOutMessage {
         this.username = username;
         this.message = message;
         this.online = online;
+        this.timestamp = timestamp;
+    }
+
+    public NewMsgOutMessage(String room, String username, String message, long timestamp) {
+        this.room = room;
+        this.username = username;
+        this.message = message;
         this.timestamp = timestamp;
     }
 
@@ -28,5 +36,9 @@ public class NewMsgOutMessage {
 
     public long getTimestamp() {
         return timestamp;
+    }
+
+    public String getRoom() {
+        return room;
     }
 }

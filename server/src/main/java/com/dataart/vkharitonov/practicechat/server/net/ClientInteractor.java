@@ -138,9 +138,7 @@ public final class ClientInteractor {
 
     private void handleSendMessageRequest(Message message) {
         SendMsgInMessage msg = message.getPayload(SendMsgInMessage.class);
-        if (msg != null) {
-            interactorManager.sendMessage(username, msg.getUsername(), msg.getMessage(), System.currentTimeMillis());
-        }
+        interactorManager.sendMessage(username, msg.getUsername(), msg.getMessage(), System.currentTimeMillis());
     }
 
     private void handleListRoomsRequest() {

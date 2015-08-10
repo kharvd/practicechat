@@ -31,7 +31,7 @@ public class ChatMsgDao extends Dao<ChatMsgDto> {
         });
     }
 
-    public CompletableFuture<Void> addUndeliveredMsg(ChatMsgDto chatMsg) {
+    public CompletableFuture<Void> addMsg(ChatMsgDto chatMsg) {
         return supplyAsync(connection -> {
             String insert = "INSERT INTO messages(sender, destination, message, sending_time, delivered) \n" +
                     "VALUES (?, ?, ?, to_timestamp(?), FALSE);";

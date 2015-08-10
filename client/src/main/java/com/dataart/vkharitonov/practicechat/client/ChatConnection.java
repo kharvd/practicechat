@@ -12,6 +12,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 /**
  * Manages client's connection to the server
@@ -121,7 +122,8 @@ public class ChatConnection {
 
     private void handleNewMessage(Message message) {
         NewMsgOutMessage payload = message.getPayload(NewMsgOutMessage.class);
-        listener.onNewMessage(payload.getUsername(), payload.getMessage(), payload.isOnline(), payload.getTimestamp());
+        listener.onNewMessage(payload.getUsername(), Optional.ofNullable(payload.getRoom()), payload.getMessage(), payload
+                .isOnline(), payload.getTimestamp());
     }
 
     private void handleMsgSent(Message message) {

@@ -4,6 +4,7 @@ import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
 import com.dataart.vkharitonov.practicechat.common.json.UserListOutMessage;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Listens to server's messages to the client
@@ -17,7 +18,7 @@ public interface ServerMessageListener {
 
     void onRoomList(List<String> rooms);
 
-    void onNewMessage(String sender, String message, boolean userOnline, long timestamp);
+    void onNewMessage(String sender, Optional<String> room, String message, boolean userOnline, long timestamp);
 
     void onMessageHistory(List<ChatMsg> messages);
 

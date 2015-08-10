@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 
 public class Main {
 
@@ -185,8 +186,10 @@ public class Main {
         }
 
         @Override
-        public void onNewMessage(String sender, String message, boolean userOnline, long timestamp) {
-            System.out.format("[%tT] %s: %s%n", timestamp, sender, message);
+        public void onNewMessage(String sender, Optional<String> room, String message, boolean userOnline, long timestamp) {
+            System.out.format("[%tT] %s%s: %s%n", timestamp, sender, room.map(s -> String.format(" (%s)", s))
+                                                                         .orElseGet(() -> ""),
+                    message);
         }
 
         @Override
@@ -195,7 +198,7 @@ public class Main {
                 System.out.println("History is empty");
             } else {
                 for (ChatMsg message : messages) {
-                    onNewMessage(message.getSender(), message.getMessage(), false, message.getTimestamp());
+                    onNewMessage(message.getSender(), Optional.empty(), message.getMessage(), false, message.getTimestamp());
                 }
             }
         }

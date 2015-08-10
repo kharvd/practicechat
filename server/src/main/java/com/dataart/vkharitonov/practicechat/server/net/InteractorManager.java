@@ -43,13 +43,25 @@ public final class InteractorManager {
 
     /**
      * Sends message to {@code destination} from {@code sender} with text {@code message} and {@code timestamp}.
-     * Adds the message to message history
+     * Adds the message to message history.
+     *
+     * If {@code destination} starts with '#' symbol, the message is sent to a room.
      *
      * @return {@link CompletableFuture} that completes as soon as the message is sent
      */
-    public CompletableFuture<Boolean> sendMessage(String sender, String destination, String message, long timestamp) {
-        return getMsgDao().addUndeliveredMsg(new ChatMsgDto(sender, destination, message, timestamp, false))
-                          .thenComposeAsync(aVoid -> sendMessageToClient(sender, destination, message, timestamp));
+    public CompletableFuture<Void> sendMessage(String sender, String destination, String message, long timestamp) {
+        if (destination.startsWith("#")) {
+            return getRoomMsgDao().addMsg(new RoomMsgDto(sender, destination, message, timestamp))
+                                  .thenComposeAsync(aVoid -> getRoomDao().getUsersForRoom(destination))
+                                  .thenAccept(users -> {
+                                      users.stream()
+                                           .filter(u -> !Objects.equals(u, sender))
+                                           .forEach(user -> sendMessageFromRoom(destination, sender, user, message, timestamp));
+                                  });
+        } else {
+            return getMsgDao().addMsg(new ChatMsgDto(sender, destination, message, timestamp, false))
+                              .thenComposeAsync(aVoid -> sendMessageToClient(sender, destination, message, timestamp));
+        }
     }
 
     /**
@@ -67,6 +79,9 @@ public final class InteractorManager {
         return usernamesFuture.thenApplyAsync(this::wrapListUsersResult);
     }
 
+    /**
+     * Returns the list of all available rooms
+     */
     public CompletableFuture<RoomListOutMessage> listRooms() {
         return getRoomDao().getRooms().thenApply(RoomListOutMessage::new);
     }
@@ -188,7 +203,7 @@ public final class InteractorManager {
     /**
      * Sends new text message to the client
      */
-    private CompletableFuture<Boolean> sendMessageToClient(String sender, String destination, String message, long timestamp) {
+    private CompletableFuture<Void> sendMessageToClient(String sender, String destination, String message, long timestamp) {
         ClientInteractor interactor = clients.getInteractor(destination);
         if (interactor != null) {
             return interactor.sendNewMessage(new NewMsgOutMessage(sender, message, true, timestamp))
@@ -201,10 +216,18 @@ public final class InteractorManager {
                                      return CompletableFuture.completedFuture(null);
                                  }
                              })
-                             .thenComposeAsync(o1 -> getMsgDao().setOldestMessageDelivered(destination))
-                             .thenApply(o1 -> true);
+                             .thenComposeAsync(o1 -> getMsgDao().setOldestMessageDelivered(destination));
         } else {
-            return CompletableFuture.completedFuture(false);
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private CompletableFuture<Void> sendMessageFromRoom(String room, String sender, String destination, String message, long timestamp) {
+        ClientInteractor interactor = clients.getInteractor(destination);
+        if (interactor != null) {
+            return interactor.sendNewMessage(new NewMsgOutMessage(room, sender, message, timestamp));
+        } else {
+            return CompletableFuture.completedFuture(null);
         }
     }
 
@@ -269,8 +292,13 @@ public final class InteractorManager {
         return DbHelper.getInstance().getRoomDao();
     }
 
+    private RoomMsgDao getRoomMsgDao() {
+        return DbHelper.getInstance().getRoomMsgDao();
+    }
+
+
     /**
-     * Result of connecting new user
+     * Result of connecting a new user
      */
     private static class ConnectionResult {
         private ClientInteractor clientInteractor;
