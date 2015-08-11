@@ -88,6 +88,9 @@ public class Message {
         ROOM_JOINED,
 
         @SerializedName("room_left")
-        ROOM_LEFT
+        ROOM_LEFT,
+
+        @SerializedName("room_dropped")
+        ROOM_DROPPED
     }
 }

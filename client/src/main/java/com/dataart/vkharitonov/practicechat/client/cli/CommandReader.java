@@ -32,6 +32,8 @@ public class CommandReader {
     private static final String LEAVE_SYNTAX_STRING = "Syntax: leave #<room>";
     private static final Pattern LEAVE_PATTERN = Pattern.compile("leave\\s+(?<roomName>#?" + USERNAME_PATTERN + ")");
 
+    private static final String DROP_SYNTAX_STRING = "Syntax: drop #<room>";
+    private static final Pattern DROP_PATTERN = Pattern.compile("drop\\s+(?<roomName>#?" + USERNAME_PATTERN + ")");
 
     private final BufferedReader in;
     private CommandHandler handler;
@@ -87,6 +89,9 @@ public class CommandReader {
                     case "leave":
                         parseLeaveCommand(line);
                         break;
+                    case "drop":
+                        parseDropCommand(line);
+                        break;
                     case "help":
                         handler.onHelp();
                         break;
@@ -121,6 +126,16 @@ public class CommandReader {
         }
 
         handler.onLeave(roomName);
+    }
+
+    private void parseDropCommand(String line) {
+        String roomName = parseSimpleCommand(line, DROP_PATTERN, DROP_SYNTAX_STRING, "roomName");
+
+        if (!roomName.startsWith("#")) {
+            roomName = "#" + roomName;
+        }
+
+        handler.onDrop(roomName);
     }
 
     private void parseJoinCommand(String line) {

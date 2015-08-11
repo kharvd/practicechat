@@ -32,6 +32,8 @@ public class Main {
                 "    send <username> \"<message>\" - sends <message> to <username>\n" +
                 "    history <username> - lists message history with user <username>\n" +
                 "    join #<room> - joins the room\n" +
+                "    leave #<room> - leaves the room\n" +
+                "    drop #<room> - drops the room\n" +
                 "    disconnect - disconnects from the server\n" +
                 "    help - show this help message\n" +
                 "    exit - exit the application");
@@ -138,6 +140,18 @@ public class Main {
         }
 
         @Override
+        public void onDrop(String roomName) {
+            if (checkConnection()) {
+                try {
+                    connection.dropRoom(roomName);
+                } catch (IOException e) {
+                    System.out.println("Couldn't send message to the server. Disconnecting");
+                    connection.disconnect();
+                }
+            }
+        }
+
+        @Override
         public void onDisconnect() {
             if (connection != null) {
                 connection.disconnect();
@@ -232,6 +246,15 @@ public class Main {
                 System.out.format("Left room %s%n", roomName);
             } else {
                 System.out.format("Couldn't leave room %s: you are not its member%n", roomName);
+            }
+        }
+
+        @Override
+        public void onRoomDropped(String roomName, boolean success) {
+            if (success) {
+                System.out.format("Dropped room %s%n", roomName);
+            } else {
+                System.out.format("Couldn't drop room %s: access denied%n", roomName);
             }
         }
 

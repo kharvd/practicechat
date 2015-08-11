@@ -15,6 +15,8 @@ public interface CommandHandler {
 
     void onLeave(String roomName);
 
+    void onDrop(String roomName);
+
     void onDisconnect();
 
     void onExit();

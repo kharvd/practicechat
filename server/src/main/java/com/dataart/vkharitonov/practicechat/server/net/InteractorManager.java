@@ -130,6 +130,11 @@ public final class InteractorManager {
                            .thenApplyAsync(success -> new RoomLeftOutMessage(roomName, success));
     }
 
+    public CompletableFuture<RoomDroppedOutMessage> dropRoom(String user, String roomName) {
+        return getRoomDao().dropRoom(roomName, user)
+                           .thenApplyAsync(success -> new RoomDroppedOutMessage(roomName, success));
+    }
+
     /**
      * Tries to connect new user to the server. If the user doesn't exist, new account is created.
      */

@@ -126,6 +126,12 @@ public final class ClientInteractor {
                          .thenAcceptAsync(m -> sendMessageToClient(Message.MessageType.ROOM_LEFT, m));
     }
 
+    private void handleDropRoomRequest(Message message) {
+        DropRoomInMessage msg = message.getPayload(DropRoomInMessage.class);
+        interactorManager.dropRoom(username, msg.getRoomName())
+                         .thenAcceptAsync(m -> sendMessageToClient(Message.MessageType.ROOM_DROPPED, m));
+    }
+
     private void handleGetHistoryRequest(Message message) {
         GetHistoryInMessage getHistoryMessage = message.getPayload(GetHistoryInMessage.class);
         interactorManager.getHistory(username, getHistoryMessage.getUsername())
@@ -192,6 +198,9 @@ public final class ClientInteractor {
                         break;
                     case LEAVE_ROOM:
                         handleLeaveRoomRequest(message);
+                        break;
+                    case DROP_ROOM:
+                        handleDropRoomRequest(message);
                         break;
                     default:
                         log.warn("Unexpected message from {}", username);

@@ -98,6 +98,10 @@ public class ChatConnection {
         sendMessage(Message.MessageType.LEAVE_ROOM, new LeaveRoomInMessage(name));
     }
 
+    public void dropRoom(String name) throws IOException {
+        sendMessage(Message.MessageType.DROP_ROOM, new DropRoomInMessage(name));
+    }
+
     /**
      * Sends `send_message` message to the server
      * @param destination user to send this message to
@@ -163,6 +167,11 @@ public class ChatConnection {
         listener.onRoomList(msg.getRooms());
     }
 
+    private void handleRoomDropped(Message message) {
+        RoomDroppedOutMessage msg = message.getPayload(RoomDroppedOutMessage.class);
+        listener.onRoomDropped(msg.getRoomName(), msg.isSuccess());
+    }
+
     private class MessageConsumer implements MessageProducer.Consumer {
         @Override
         public void onNext(Message message) {
@@ -190,6 +199,9 @@ public class ChatConnection {
                     break;
                 case ROOM_LEFT:
                     handleRoomLeft(message);
+                    break;
+                case ROOM_DROPPED:
+                    handleRoomDropped(message);
                     break;
                 default:
                     break;
