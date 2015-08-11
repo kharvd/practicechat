@@ -91,6 +91,11 @@ public class ChatConnection {
     public void joinRoom(String name) throws IOException {
         sendMessage(Message.MessageType.JOIN_ROOM, new JoinRoomInMessage(name));
     }
+
+    public void leaveRoom(String name) throws IOException {
+        sendMessage(Message.MessageType.LEAVE_ROOM, new LeaveRoomInMessage(name));
+    }
+
     /**
      * Sends `send_message` message to the server
      * @param destination user to send this message to
@@ -146,6 +151,11 @@ public class ChatConnection {
         listener.onRoomJoined(msg.getRoomName(), msg.isRoomExists());
     }
 
+    private void handleRoomLeft(Message message) {
+        RoomLeftOutMessage msg = message.getPayload(RoomLeftOutMessage.class);
+        listener.onRoomLeft(msg.getRoomName(), msg.isSuccess());
+    }
+
     private void handleRoomList(Message message) {
         RoomListOutMessage msg = message.getPayload(RoomListOutMessage.class);
         listener.onRoomList(msg.getRooms());
@@ -175,6 +185,9 @@ public class ChatConnection {
                     break;
                 case ROOM_LIST:
                     handleRoomList(message);
+                    break;
+                case ROOM_LEFT:
+                    handleRoomLeft(message);
                     break;
                 default:
                     break;

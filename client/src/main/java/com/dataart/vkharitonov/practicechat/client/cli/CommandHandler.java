@@ -13,6 +13,8 @@ public interface CommandHandler {
 
     void onJoin(String roomName);
 
+    void onLeave(String roomName);
+
     void onDisconnect();
 
     void onExit();

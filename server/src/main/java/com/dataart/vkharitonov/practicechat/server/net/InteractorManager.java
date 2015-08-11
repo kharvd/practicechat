@@ -44,7 +44,7 @@ public final class InteractorManager {
     /**
      * Sends message to {@code destination} from {@code sender} with text {@code message} and {@code timestamp}.
      * Adds the message to message history.
-     *
+     * <p>
      * If {@code destination} starts with '#' symbol, the message is sent to a room.
      *
      * @return {@link CompletableFuture} that completes as soon as the message is sent
@@ -116,6 +116,14 @@ public final class InteractorManager {
 
             return new RoomJoinedOutMessage(roomName, roomExists);
         });
+    }
+
+    /**
+     * Removes the {@code user} from the room {@code roomName}
+     */
+    public CompletableFuture<RoomLeftOutMessage> leaveRoom(String user, String roomName) {
+        return getRoomDao().removeUserFromRoom(roomName, user)
+                           .thenApplyAsync(success -> new RoomLeftOutMessage(roomName, success));
     }
 
     /**

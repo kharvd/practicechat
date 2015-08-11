@@ -46,6 +46,14 @@ public class RoomDao extends Dao<RoomDto> {
         });
     }
 
+    public CompletableFuture<Boolean> removeUserFromRoom(String roomName, String username) {
+        return supplyAsync(connection -> {
+            String leaveRoom = "DELETE FROM room_members WHERE room = ? AND username = ?;";
+            int rowsUpdated = getQueryRunner().update(connection, leaveRoom, roomName, username);
+            return rowsUpdated > 0;
+        });
+    }
+
     public CompletableFuture<List<String>> getUsersForRoom(String roomName) {
         return supplyAsync(connection -> {
             String query = "SELECT username FROM room_members WHERE room = ?;";

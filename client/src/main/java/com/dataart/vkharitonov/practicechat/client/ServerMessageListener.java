@@ -24,6 +24,8 @@ public interface ServerMessageListener {
 
     void onRoomJoined(String roomName, boolean roomExists);
 
+    void onRoomLeft(String roomName, boolean success);
+
     /**
      * Server disconnected. No more messages are expected after this point
      */

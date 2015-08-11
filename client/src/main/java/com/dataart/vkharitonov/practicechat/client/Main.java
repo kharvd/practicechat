@@ -126,6 +126,18 @@ public class Main {
         }
 
         @Override
+        public void onLeave(String roomName) {
+            if (checkConnection()) {
+                try {
+                    connection.leaveRoom(roomName);
+                } catch (IOException e) {
+                    System.out.println("Couldn't send message to the server. Disconnecting");
+                    connection.disconnect();
+                }
+            }
+        }
+
+        @Override
         public void onDisconnect() {
             if (connection != null) {
                 connection.disconnect();
@@ -187,8 +199,10 @@ public class Main {
 
         @Override
         public void onNewMessage(String sender, Optional<String> room, String message, boolean userOnline, long timestamp) {
-            System.out.format("[%tT] %s%s: %s%n", timestamp, sender, room.map(s -> String.format(" (%s)", s))
-                                                                         .orElseGet(() -> ""),
+            System.out.format("[%tT] %s%s: %s%n",
+                    timestamp,
+                    sender,
+                    room.map(s -> String.format(" (%s)", s)).orElseGet(() -> ""),
                     message);
         }
 
@@ -209,6 +223,15 @@ public class Main {
                 System.out.format("Joined room %s%n", roomName);
             } else {
                 System.out.format("Created room %s%n", roomName);
+            }
+        }
+
+        @Override
+        public void onRoomLeft(String roomName, boolean success) {
+            if (success) {
+                System.out.format("Left room %s%n", roomName);
+            } else {
+                System.out.format("Couldn't leave room %s: you are not its member%n", roomName);
             }
         }
 

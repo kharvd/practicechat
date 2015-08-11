@@ -149,6 +149,7 @@ Response to `drop_room` request. `success` is false, if the user is not the admi
 Payload example:
 
         {
+            "room_name": "#java_devs",
             "success": true
         }
         
@@ -158,6 +159,7 @@ Response to `leave_room` request. `success` is false, if the user is not a membe
 Payload example:
 
         {
+            "room_name": "#java_devs",
             "success": true
         }
 

@@ -29,6 +29,10 @@ public class CommandReader {
     private static final String JOIN_SYNTAX_STRING = "Syntax: join #<room>";
     private static final Pattern JOIN_PATTERN = Pattern.compile("join\\s+(?<roomName>#?" + USERNAME_PATTERN + ")");
 
+    private static final String LEAVE_SYNTAX_STRING = "Syntax: leave #<room>";
+    private static final Pattern LEAVE_PATTERN = Pattern.compile("leave\\s+(?<roomName>#?" + USERNAME_PATTERN + ")");
+
+
     private final BufferedReader in;
     private CommandHandler handler;
 
@@ -53,7 +57,8 @@ public class CommandReader {
 
     private void loop() throws IOException {
         String line;
-        while ((line = in.readLine()) != null) {
+        boolean exit = false;
+        while (!exit && (line = in.readLine()) != null) {
             String trimmed = line.trim();
             String[] split = trimmed.split(" ", 2);
             try {
@@ -79,8 +84,14 @@ public class CommandReader {
                     case "join":
                         parseJoinCommand(line);
                         break;
+                    case "leave":
+                        parseLeaveCommand(line);
+                        break;
                     case "help":
                         handler.onHelp();
+                        break;
+                    case "exit":
+                        exit = true;
                         break;
                     default:
                         throw new IllegalArgumentException("Unknown command: " + split[0]);
@@ -93,13 +104,27 @@ public class CommandReader {
         handler.onExit();
     }
 
-    private void parseJoinCommand(String line) {
-        Matcher matcher = JOIN_PATTERN.matcher(line);
+    private String parseSimpleCommand(String line, Pattern pattern, String syntaxString, String argName) {
+        Matcher matcher = pattern.matcher(line);
         if (!matcher.matches()) {
-            throw new IllegalArgumentException(JOIN_SYNTAX_STRING);
+            throw new IllegalArgumentException(syntaxString);
         }
 
-        String roomName = matcher.group("roomName");
+        return matcher.group(argName);
+    }
+
+    private void parseLeaveCommand(String line) {
+        String roomName = parseSimpleCommand(line, LEAVE_PATTERN, LEAVE_SYNTAX_STRING, "roomName");
+
+        if (!roomName.startsWith("#")) {
+            roomName = "#" + roomName;
+        }
+
+        handler.onLeave(roomName);
+    }
+
+    private void parseJoinCommand(String line) {
+        String roomName = parseSimpleCommand(line, JOIN_PATTERN, JOIN_SYNTAX_STRING, "roomName");
 
         if (!roomName.startsWith("#")) {
             roomName = "#" + roomName;
@@ -109,12 +134,7 @@ public class CommandReader {
     }
 
     private void parseHistoryCommand(String line) {
-        Matcher matcher = HISTORY_PATTERN.matcher(line);
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException(HISTORY_SYNTAX_STRING);
-        }
-
-        handler.onHistory(matcher.group("name"));
+        handler.onHistory(parseSimpleCommand(line, HISTORY_PATTERN, HISTORY_SYNTAX_STRING, "name"));
     }
 
     private void parseSendMsgCommand(String line) {
@@ -127,12 +147,7 @@ public class CommandReader {
     }
 
     private void parseListCommand(String line) {
-        Matcher matcher = LIST_PATTERN.matcher(line);
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException(LIST_SYNTAX_STRING);
-        }
-
-        String roomName = matcher.group("roomName");
+        String roomName = parseSimpleCommand(line, LIST_PATTERN, LIST_SYNTAX_STRING, "roomName");
 
         if (roomName != null && !roomName.startsWith("#")) {
             roomName = "#" + roomName;
