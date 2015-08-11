@@ -1,6 +1,10 @@
 package com.dataart.vkharitonov.practicechat.server.net;
 
-import com.dataart.vkharitonov.practicechat.common.json.*;
+import com.dataart.vkharitonov.practicechat.common.json.Message;
+import com.dataart.vkharitonov.practicechat.common.json.in.*;
+import com.dataart.vkharitonov.practicechat.common.json.out.ConnectionResultOutMessage;
+import com.dataart.vkharitonov.practicechat.common.json.out.MsgSentOutMessage;
+import com.dataart.vkharitonov.practicechat.common.json.out.NewMsgOutMessage;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.common.util.MessageProducer;
 import org.apache.commons.net.io.Util;

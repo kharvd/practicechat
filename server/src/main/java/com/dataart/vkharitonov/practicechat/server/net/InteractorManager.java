@@ -1,8 +1,12 @@
 package com.dataart.vkharitonov.practicechat.server.net;
 
-import com.dataart.vkharitonov.practicechat.common.json.*;
+import com.dataart.vkharitonov.practicechat.common.json.Message;
+import com.dataart.vkharitonov.practicechat.common.json.out.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.server.db.*;
+import com.dataart.vkharitonov.practicechat.server.db.dto.ChatMsgDto;
+import com.dataart.vkharitonov.practicechat.server.db.dto.RoomMsgDto;
+import com.dataart.vkharitonov.practicechat.server.db.dto.UserDto;
 import com.dataart.vkharitonov.practicechat.server.exception.UserConnectException;
 import com.dataart.vkharitonov.practicechat.server.utils.FutureUtils;
 import com.dataart.vkharitonov.practicechat.server.utils.HashUtils;

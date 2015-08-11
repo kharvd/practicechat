@@ -1,4 +1,4 @@
-package com.dataart.vkharitonov.practicechat.server.db;
+package com.dataart.vkharitonov.practicechat.server.db.dto;
 
 import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
 

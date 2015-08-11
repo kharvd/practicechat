@@ -1,7 +1,8 @@
 package com.dataart.vkharitonov.practicechat.server.db;
 
 import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
-import com.dataart.vkharitonov.practicechat.common.json.MsgHistoryOutMessage;
+import com.dataart.vkharitonov.practicechat.common.json.out.MsgHistoryOutMessage;
+import com.dataart.vkharitonov.practicechat.server.db.dto.RoomMsgDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

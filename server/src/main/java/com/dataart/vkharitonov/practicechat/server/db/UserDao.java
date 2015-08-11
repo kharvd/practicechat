@@ -1,5 +1,6 @@
 package com.dataart.vkharitonov.practicechat.server.db;
 
+import com.dataart.vkharitonov.practicechat.server.db.dto.UserDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

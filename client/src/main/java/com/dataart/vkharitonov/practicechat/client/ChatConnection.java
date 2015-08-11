@@ -1,6 +1,8 @@
 package com.dataart.vkharitonov.practicechat.client;
 
-import com.dataart.vkharitonov.practicechat.common.json.*;
+import com.dataart.vkharitonov.practicechat.common.json.Message;
+import com.dataart.vkharitonov.practicechat.common.json.in.*;
+import com.dataart.vkharitonov.practicechat.common.json.out.*;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.dataart.vkharitonov.practicechat.common.util.MessageProducer;
 import org.apache.commons.net.io.Util;

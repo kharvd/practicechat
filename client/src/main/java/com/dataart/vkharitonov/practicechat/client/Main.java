@@ -3,7 +3,7 @@ package com.dataart.vkharitonov.practicechat.client;
 import com.dataart.vkharitonov.practicechat.client.cli.CommandHandler;
 import com.dataart.vkharitonov.practicechat.client.cli.CommandReader;
 import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
-import com.dataart.vkharitonov.practicechat.common.json.UserListOutMessage;
+import com.dataart.vkharitonov.practicechat.common.json.out.UserListOutMessage;
 
 import java.io.BufferedReader;
 import java.io.IOException;

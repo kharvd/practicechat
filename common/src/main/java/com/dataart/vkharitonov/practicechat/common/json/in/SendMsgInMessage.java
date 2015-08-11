@@ -1,4 +1,4 @@
-package com.dataart.vkharitonov.practicechat.common.json;
+package com.dataart.vkharitonov.practicechat.common.json.in;
 
 public class SendMsgInMessage {
 

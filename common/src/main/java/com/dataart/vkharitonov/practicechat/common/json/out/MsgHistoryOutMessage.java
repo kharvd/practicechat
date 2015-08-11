@@ -1,4 +1,6 @@
-package com.dataart.vkharitonov.practicechat.common.json;
+package com.dataart.vkharitonov.practicechat.common.json.out;
+
+import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
 
 import java.util.ArrayList;
 import java.util.Collections;

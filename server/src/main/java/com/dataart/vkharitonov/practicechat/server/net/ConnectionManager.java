@@ -1,7 +1,7 @@
 package com.dataart.vkharitonov.practicechat.server.net;
 
-import com.dataart.vkharitonov.practicechat.common.json.ConnectInMessage;
 import com.dataart.vkharitonov.practicechat.common.json.Message;
+import com.dataart.vkharitonov.practicechat.common.json.in.ConnectInMessage;
 import com.dataart.vkharitonov.practicechat.common.util.JsonUtils;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
