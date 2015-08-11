@@ -15,7 +15,7 @@ public interface ServerMessageListener {
 
     void onMessageSent(String user);
 
-    void onUserList(List<UserListOutMessage.User> users);
+    void onUserList(Optional<String> roomName, List<UserListOutMessage.User> users);
 
     void onRoomList(List<String> rooms);
 

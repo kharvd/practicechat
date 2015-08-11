@@ -169,6 +169,7 @@ Sent by the server as a response to `list_users` command.
 Payload example:
 
         {
+            "room": null,
             "users": [
                 {
                     "username": "john_doe1952",

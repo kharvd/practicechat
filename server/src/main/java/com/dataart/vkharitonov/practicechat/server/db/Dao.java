@@ -46,9 +46,10 @@ class Dao<T> {
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
-        }, DbHelper.getDbExecutor()).exceptionally(e -> {
-            log.error("Error during DB query: {}", e.getLocalizedMessage());
-            throw new RuntimeException(e);
+        }, DbHelper.getDbExecutor()).whenComplete((r, e) -> {
+            if (e != null) {
+                log.warn("Error during DB query: {}", e.getLocalizedMessage());
+            }
         });
     }
 

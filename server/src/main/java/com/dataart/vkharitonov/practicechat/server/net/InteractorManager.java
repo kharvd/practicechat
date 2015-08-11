@@ -79,7 +79,7 @@ public final class InteractorManager {
         CompletableFuture<List<String>> usernamesFuture;
         usernamesFuture = roomName.isPresent() ? getRoomDao().getUsersForRoom(roomName.get()) : clients.usersList();
 
-        return usernamesFuture.thenApplyAsync(this::wrapListUsersResult);
+        return usernamesFuture.thenApplyAsync(list -> wrapListUsersResult(roomName, list));
     }
 
     /**
@@ -298,12 +298,17 @@ public final class InteractorManager {
         });
     }
 
-    private UserListOutMessage wrapListUsersResult(Collection<String> usernames) {
+    private UserListOutMessage wrapListUsersResult(Optional<String> room, Collection<String> usernames) {
         List<UserListOutMessage.User> userList =
                 usernames.stream()
                          .map(username -> new UserListOutMessage.User(username, clients.isOnline(username)))
                          .collect(Collectors.toList());
-        return new UserListOutMessage(userList);
+
+        if (room.isPresent()) {
+            return new UserListOutMessage(room.get(), userList);
+        } else {
+            return new UserListOutMessage(userList);
+        }
     }
 
     private ChatMsgDao getMsgDao() {

@@ -132,7 +132,7 @@ public class ChatConnection {
 
     private void handleUserList(Message message) {
         UserListOutMessage payload = message.getPayload(UserListOutMessage.class);
-        listener.onUserList(payload.getUsers());
+        listener.onUserList(Optional.ofNullable(payload.getRoom()), payload.getUsers());
     }
 
     private void handleNewMessage(Message message) {

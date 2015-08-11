@@ -6,10 +6,21 @@ import java.util.List;
 
 public class UserListOutMessage {
 
+    private String room;
     private List<User> users;
 
     public UserListOutMessage(Collection<User> users) {
         this.users = new ArrayList<>(users);
+    }
+
+    public UserListOutMessage(String room,
+                              List<User> users) {
+        this.room = room;
+        this.users = users;
+    }
+
+    public String getRoom() {
+        return room;
     }
 
     public List<User> getUsers() {

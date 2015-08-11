@@ -207,8 +207,12 @@ public class Main {
         }
 
         @Override
-        public void onUserList(List<UserListOutMessage.User> users) {
-            System.out.format("Online users: %s%n", users);
+        public void onUserList(Optional<String> roomName, List<UserListOutMessage.User> users) {
+            if (roomName.isPresent()) {
+                System.out.format("Users in room %s: %s%n", roomName.get(), users);
+            } else {
+                System.out.format("Online users: %s%n", users);
+            }
         }
 
         @Override
