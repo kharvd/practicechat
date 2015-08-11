@@ -31,14 +31,17 @@ public class RoomMsgDao extends Dao<RoomMsgDto> {
         });
     }
 
-    public CompletableFuture<MsgHistoryOutMessage> getHistoryForRoom(String room) {
+    public CompletableFuture<MsgHistoryOutMessage> getHistoryForRoom(String room, long timestampTo, int limit) {
         return supplyAsync(connection -> {
             String query = "SELECT sender, room, message, sending_time AS sendingTime\n" +
-                    "FROM room_messages WHERE room = ?;";
-            List<ChatMsg> list = getQueryRunner().query(connection, query, getDefaultResultSetHandler(), room)
-                                                 .stream()
-                                                 .map(RoomMsgDto::toChatMsg)
-                                                 .collect(Collectors.toList());
+                    "FROM room_messages \n" +
+                    "WHERE room = ? AND sending_time <= to_timestamp(?)\n" +
+                    "LIMIT ?;";
+            List<ChatMsg> list =
+                    getQueryRunner().query(connection, query, getDefaultResultSetHandler(), room, timestampTo, limit)
+                                    .stream()
+                                    .map(RoomMsgDto::toChatMsg)
+                                    .collect(Collectors.toList());
             return new MsgHistoryOutMessage(list);
         });
     }

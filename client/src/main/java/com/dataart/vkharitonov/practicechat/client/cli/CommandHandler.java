@@ -1,5 +1,7 @@
 package com.dataart.vkharitonov.practicechat.client.cli;
 
+import java.util.OptionalInt;
+
 public interface CommandHandler {
 
     void onConnect(String username, String password, String host, int port);
@@ -10,7 +12,7 @@ public interface CommandHandler {
 
     void onSendMessage(String username, String message);
 
-    void onHistory(String username);
+    void onHistory(String username, OptionalInt limit);
 
     void onJoin(String roomName);
 

@@ -15,6 +15,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
  * Manages client's connection to the server
@@ -22,6 +23,7 @@ import java.util.Optional;
 public class ChatConnection {
 
     private final static Logger log = LoggerFactory.getLogger(ChatConnection.class.getName());
+    public static final int HISTORY_DEFAULT_LIMIT = 100;
 
     private Socket socket;
     private PrintWriter writer;
@@ -79,8 +81,10 @@ public class ChatConnection {
         sendMessage(Message.MessageType.LIST_ROOMS, null);
     }
 
-    public void getHistory(String username) throws IOException {
-        sendMessage(Message.MessageType.GET_HISTORY, new GetHistoryInMessage(username));
+    public void getHistory(String username, OptionalInt limit) throws IOException {
+        sendMessage(Message.MessageType.GET_HISTORY,
+                    new GetHistoryInMessage(username, limit.orElseGet(() -> HISTORY_DEFAULT_LIMIT),
+                                            System.currentTimeMillis()));
     }
 
     public void joinRoom(String name) throws IOException {

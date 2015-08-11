@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 public class Main {
 
@@ -25,16 +26,13 @@ public class Main {
 
     private static void showHelp() {
         System.out.println("Available commands: \n" +
-                                   "    connect <user>@<host>:<port> <password> - connects <user>" +
-                                   " to <host>:<port>\n" +
-                                   "    list [#<room>] - lists users currently connected to the " +
-                                   "server, or, \n" +
+                                   "    connect <user>@<host>:<port> <password> - connects <user> to <host>:<port>\n" +
+                                   "    list [#<room>] - lists users currently connected to the server, or, \n" +
                                    "        if room is specified, members of the room\n" +
                                    "    rooms - lists all available rooms\n" +
-                                   "    send <username> \"<message>\" - sends <message> to " +
-                                   "<username>\n" +
-                                   "    history <username> - lists message history with user " +
-                                   "<username>\n" +
+                                   "    send <username> \"<message>\" - sends <message> to <username>\n" +
+                                   "    history <username> [<limit>] - lists message history with user <username>. " +
+                                   "<limit> must be <= 100\n" +
                                    "    join #<room> - joins the room\n" +
                                    "    leave #<room> - leaves the room\n" +
                                    "    drop #<room> - drops the room\n" +
@@ -108,10 +106,10 @@ public class Main {
         }
 
         @Override
-        public void onHistory(String username) {
+        public void onHistory(String username, OptionalInt limit) {
             if (checkConnection()) {
                 try {
-                    connection.getHistory(username);
+                    connection.getHistory(username, limit);
                 } catch (IOException e) {
                     System.out.println("Couldn't send message to the server. Disconnecting");
                     connection.disconnect();
@@ -124,6 +122,7 @@ public class Main {
             if (checkConnection()) {
                 try {
                     connection.joinRoom(roomName);
+                    connection.getHistory(roomName, OptionalInt.of(10));
                 } catch (IOException e) {
                     System.out.println("Couldn't send message to the server. Disconnecting");
                     connection.disconnect();

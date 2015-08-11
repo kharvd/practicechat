@@ -32,6 +32,7 @@ public final class InteractorManager {
 
     private final static Logger log = LoggerFactory.getLogger(InteractorManager.class.getName());
     private static final int CONNECTION_FAILURE_TIMEOUT = 1000;
+    public static final int MAX_MESSAGES_HISTORY = 100;
 
     private final UserList clients = new UserList();
 
@@ -95,11 +96,16 @@ public final class InteractorManager {
      *
      * @return {@link CompletableFuture} that completes with the {@link MsgHistoryOutMessage}
      */
-    public CompletableFuture<MsgHistoryOutMessage> getHistory(String sender, String partner) {
+    public CompletableFuture<MsgHistoryOutMessage> getHistory(String sender, String partner, long timestampTo,
+                                                              int limit) {
+        if (limit > MAX_MESSAGES_HISTORY || limit < 0) {
+            limit = MAX_MESSAGES_HISTORY;
+        }
+
         if (partner.startsWith("#")) {
-            return getRoomMsgDao().getHistoryForRoom(partner);
+            return getRoomMsgDao().getHistoryForRoom(partner, timestampTo, limit);
         } else {
-            return getMsgDao().getHistoryForUsers(sender, partner);
+            return getMsgDao().getHistoryForUsers(sender, partner, timestampTo, limit);
         }
     }
 

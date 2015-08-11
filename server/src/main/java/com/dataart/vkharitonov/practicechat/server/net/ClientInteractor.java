@@ -136,7 +136,8 @@ public final class ClientInteractor {
 
     private void handleGetHistoryRequest(Message message) {
         GetHistoryInMessage getHistoryMessage = message.getPayload(GetHistoryInMessage.class);
-        interactorManager.getHistory(username, getHistoryMessage.getUsername())
+        interactorManager.getHistory(username, getHistoryMessage.getUsername(), getHistoryMessage.getTimestampTo(),
+                                     getHistoryMessage.getLimit())
                          .thenAccept(msg -> sendMessageToClient(Message.MessageType.MESSAGE_HISTORY, msg));
     }
 

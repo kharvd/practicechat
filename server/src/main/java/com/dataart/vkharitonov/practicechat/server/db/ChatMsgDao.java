@@ -63,16 +63,19 @@ public class ChatMsgDao extends Dao<ChatMsgDto> {
         });
     }
 
-    public CompletableFuture<MsgHistoryOutMessage> getHistoryForUsers(String username1, String username2) {
+    public CompletableFuture<MsgHistoryOutMessage> getHistoryForUsers(String username1, String username2,
+                                                                      long timestampTo, int limit) {
         return supplyAsync(connection -> {
-            String sql = "SELECT sender, destination, message, delivered, sending_time AS sendingTime " +
-                    "FROM messages \n" +
-                    "WHERE (sender = ? AND destination = ?) OR \n" +
-                    "    (sender = ? AND destination = ?)\n" +
-                    "ORDER BY sendingTime;";
+            String sql = "SELECT sender, destination, message, delivered, sending_time AS sendingTime FROM messages " +
+                    "\n" +
+                    "WHERE ((sender = ? AND destination = ?) OR \n" +
+                    "    (sender = ? AND destination = ?))\n" +
+                    "    AND sending_time <= to_timestamp(?)\n" +
+                    "ORDER BY sendingTime \n" +
+                    "LIMIT ?;";
             List<ChatMsg> messages =
                     getQueryRunner().query(connection, sql, getDefaultResultSetHandler(), username1, username2,
-                                           username2, username1)
+                                           username2, username1, timestampTo / 1000.0, limit)
                                     .stream()
                                     .map(ChatMsgDto::toChatMsg)
                                     .collect(Collectors.toList());

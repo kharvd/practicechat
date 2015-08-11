@@ -1,8 +1,11 @@
 package com.dataart.vkharitonov.practicechat.client.cli;
 
+import com.google.common.base.Strings;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.OptionalInt;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,8 +29,10 @@ public class CommandReader {
     private static final Pattern SEND_PATTERN =
             Pattern.compile("send\\s+(?<name>#?" + USERNAME_PATTERN + ")\\s+\"(?<message>.*)\"");
 
-    private static final String HISTORY_SYNTAX_STRING = "Syntax: history <username>";
-    private static final Pattern HISTORY_PATTERN = Pattern.compile("history\\s+(?<name>#?" + USERNAME_PATTERN + ")");
+    private static final String HISTORY_SYNTAX_STRING =
+            "Syntax: history <username> [<limit>], <limit> must be less or equal than 100";
+    private static final Pattern HISTORY_PATTERN = Pattern.compile("history\\s+(?<name>#?" + USERNAME_PATTERN +
+                                                                           ")(\\s+(?<limit>\\d{1,3}))?");
 
     private static final String JOIN_SYNTAX_STRING = "Syntax: join #<room>";
     private static final Pattern JOIN_PATTERN = Pattern.compile("join\\s+(?<roomName>#?" + USERNAME_PATTERN + ")");
@@ -152,7 +157,25 @@ public class CommandReader {
     }
 
     private void parseHistoryCommand(String line) {
-        handler.onHistory(parseSimpleCommand(line, HISTORY_PATTERN, HISTORY_SYNTAX_STRING, "name"));
+        Matcher matcher = HISTORY_PATTERN.matcher(line);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException(HISTORY_SYNTAX_STRING);
+        }
+
+        String name = matcher.group("name");
+        OptionalInt limit;
+        if (Strings.isNullOrEmpty(matcher.group("limit"))) {
+            limit = OptionalInt.empty();
+        } else {
+            int limitInt = Integer.parseInt(matcher.group("limit"));
+            if (limitInt > 100) {
+                throw new IllegalArgumentException(HISTORY_SYNTAX_STRING);
+            }
+
+            limit = OptionalInt.of(limitInt);
+        }
+
+        handler.onHistory(name, limit);
     }
 
     private void parseSendMsgCommand(String line) {

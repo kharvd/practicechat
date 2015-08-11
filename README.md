@@ -58,17 +58,21 @@ Payload example:
         }
 
 #### get_history
-Requests message history with the specified user or the room (if the username starts with '\#')
+Requests message history with the specified user or the room (if the username starts with '\#'). Gets up to `limit` 
+messages sent before `timestamp_to`. Limit must be less than 100.
 
 Payload example:
 
         {
-            "username": "NAGibaTOR_40k"
+            "username": "NAGibaTOR_40k",
+            "limit": 10,
+            "timestamp_to": 1438182184000
         }
         
 #### join_room
 Joins a room. Room name must start with a hash sign ('\#'). If the room doesn't exist, it is created and
-the current user becomes its administrator
+the current user becomes its administrator. `history_limit` is an optional parameter that
+specifies how many recent messages from the last `history_minutes` minutes will be delivered after joining.
 
 Payload example:
 
