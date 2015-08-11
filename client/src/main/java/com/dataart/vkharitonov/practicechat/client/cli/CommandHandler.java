@@ -1,6 +1,7 @@
 package com.dataart.vkharitonov.practicechat.client.cli;
 
 public interface CommandHandler {
+
     void onConnect(String username, String password, String host, int port);
 
     void onList(String roomName);

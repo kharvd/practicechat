@@ -5,6 +5,7 @@ import com.dataart.vkharitonov.practicechat.common.json.ChatMsg;
 import java.sql.Timestamp;
 
 public class ChatMsgDto {
+
     private String sender;
     private String destination;
     private String message;

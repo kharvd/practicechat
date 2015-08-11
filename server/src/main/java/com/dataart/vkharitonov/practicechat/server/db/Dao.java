@@ -31,10 +31,6 @@ class Dao<T> {
         DbHelper.getDbExecutor().shutdown();
     }
 
-    private DataSource getDataSource() {
-        return dataSource;
-    }
-
     QueryRunner getQueryRunner() {
         return queryRunner;
     }
@@ -56,7 +52,12 @@ class Dao<T> {
         });
     }
 
+    private DataSource getDataSource() {
+        return dataSource;
+    }
+
     interface Supplier<U> {
+
         U get(Connection connection) throws SQLException;
     }
 }

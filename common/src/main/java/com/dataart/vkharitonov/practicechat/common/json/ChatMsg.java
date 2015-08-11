@@ -1,6 +1,7 @@
 package com.dataart.vkharitonov.practicechat.common.json;
 
 public class ChatMsg {
+
     private String sender;
     private String destination;
     private String message;

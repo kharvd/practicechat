@@ -23,11 +23,9 @@ public class RoomMsgDao extends Dao<RoomMsgDto> {
         return supplyAsync(connection -> {
             String insert = "INSERT INTO room_messages(sender, room, message, sending_time) \n" +
                     "VALUES (?, ?, ?, to_timestamp(?));";
-            getQueryRunner().insert(connection, insert, getDefaultResultSetHandler(),
-                    roomMsg.getSender(),
-                    roomMsg.getRoom(),
-                    roomMsg.getMessage(),
-                    roomMsg.getSendingTime().getTime() / 1000.0);
+            getQueryRunner().insert(connection, insert, getDefaultResultSetHandler(), roomMsg.getSender(),
+                                    roomMsg.getRoom(), roomMsg.getMessage(),
+                                    roomMsg.getSendingTime().getTime() / 1000.0);
 
             return null;
         });

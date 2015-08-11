@@ -60,11 +60,9 @@ public class UserList {
     }
 
     public CompletableFuture<Collection<ClientInteractor>> removeAllAndShutdown() {
-        return getInteractors().thenComposeAsync(list ->
-                        removeAll().thenApplyAsync(aVoid -> {
-                            executor.shutdown();
-                            return list;
-                        })
-        );
+        return getInteractors().thenComposeAsync(list -> removeAll().thenApplyAsync(aVoid -> {
+            executor.shutdown();
+            return list;
+        }));
     }
 }

@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class UserListOutMessage {
+
     private List<User> users;
 
     public UserListOutMessage(Collection<User> users) {
@@ -16,6 +17,7 @@ public class UserListOutMessage {
     }
 
     public static class User {
+
         private String username;
         private boolean online;
 

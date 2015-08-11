@@ -27,7 +27,8 @@ public class ChatConnection {
     private PrintWriter writer;
     private ServerMessageListener listener;
 
-    public ChatConnection(String username, String password, String host, int port, ServerMessageListener listener) throws IOException {
+    public ChatConnection(String username, String password, String host, int port, ServerMessageListener listener)
+            throws IOException {
         this.listener = listener;
 
         socket = new Socket(host, port);
@@ -47,16 +48,7 @@ public class ChatConnection {
     }
 
     /**
-     * Closes connection. No more messages are accepted or sent
-     */
-    private void close() {
-        Util.closeQuietly(socket);
-        socket = null;
-        writer = null;
-    }
-
-    /**
-     *  Sends `disconnect` message to the server. If it wasn't successful, just closes the connection
+     * Sends `disconnect` message to the server. If it wasn't successful, just closes the connection
      */
     public void disconnect() {
         try {
@@ -72,6 +64,7 @@ public class ChatConnection {
 
     /**
      * Sends `list_users` message to the server
+     *
      * @throws IOException
      */
     public void listUsers(String roomName) throws IOException {
@@ -104,12 +97,23 @@ public class ChatConnection {
 
     /**
      * Sends `send_message` message to the server
+     *
      * @param destination user to send this message to
-     * @param message message body
+     * @param message     message body
+     *
      * @throws IOException
      */
     public void sendMessage(String destination, String message) throws IOException {
         sendMessage(Message.MessageType.SEND_MESSAGE, new SendMsgInMessage(destination, message));
+    }
+
+    /**
+     * Closes connection. No more messages are accepted or sent
+     */
+    private void close() {
+        Util.closeQuietly(socket);
+        socket = null;
+        writer = null;
     }
 
     private void writeConnectMessage(String username, String password) throws IOException {
@@ -133,8 +137,8 @@ public class ChatConnection {
 
     private void handleNewMessage(Message message) {
         NewMsgOutMessage payload = message.getPayload(NewMsgOutMessage.class);
-        listener.onNewMessage(payload.getUsername(), Optional.ofNullable(payload.getRoom()), payload.getMessage(), payload
-                .isOnline(), payload.getTimestamp());
+        listener.onNewMessage(payload.getUsername(), Optional.ofNullable(payload.getRoom()), payload.getMessage(),
+                              payload.isOnline(), payload.getTimestamp());
     }
 
     private void handleMsgSent(Message message) {
@@ -173,6 +177,7 @@ public class ChatConnection {
     }
 
     private class MessageConsumer implements MessageProducer.Consumer {
+
         @Override
         public void onNext(Message message) {
             switch (message.getMessageType()) {

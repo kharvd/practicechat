@@ -21,7 +21,8 @@ public class ChatMsgDao extends Dao<ChatMsgDto> {
 
     public CompletableFuture<List<ChatMsgDto>> getUndeliveredMsgsForUser(String username) {
         return supplyAsync(connection -> {
-            String query = "SELECT sender, destination, message, delivered, sending_time AS sendingTime\n" +
+            String query = "SELECT sender, destination, message, delivered, sending_time AS " +
+                    "sendingTime\n" +
                     "FROM messages\n" +
                     "WHERE destination = ? AND NOT delivered\n" +
                     "ORDER BY sendingTime;";
@@ -34,13 +35,12 @@ public class ChatMsgDao extends Dao<ChatMsgDto> {
 
     public CompletableFuture<Void> addMsg(ChatMsgDto chatMsg) {
         return supplyAsync(connection -> {
-            String insert = "INSERT INTO messages(sender, destination, message, sending_time, delivered) \n" +
+            String insert = "INSERT INTO messages(sender, destination, message, sending_time, delivered) " +
+                    "\n" +
                     "VALUES (?, ?, ?, to_timestamp(?), FALSE);";
-            getQueryRunner().insert(connection, insert, getDefaultResultSetHandler(),
-                    chatMsg.getSender(),
-                    chatMsg.getDestination(),
-                    chatMsg.getMessage(),
-                    chatMsg.getSendingTime().getTime() / 1000.0);
+            getQueryRunner().insert(connection, insert, getDefaultResultSetHandler(), chatMsg.getSender(),
+                                    chatMsg.getDestination(), chatMsg.getMessage(),
+                                    chatMsg.getSendingTime().getTime() / 1000.0);
 
             return null;
         });
@@ -65,15 +65,17 @@ public class ChatMsgDao extends Dao<ChatMsgDto> {
 
     public CompletableFuture<MsgHistoryOutMessage> getHistoryForUsers(String username1, String username2) {
         return supplyAsync(connection -> {
-            String sql = "SELECT sender, destination, message, delivered, sending_time AS sendingTime FROM messages \n" +
+            String sql = "SELECT sender, destination, message, delivered, sending_time AS sendingTime " +
+                    "FROM messages \n" +
                     "WHERE (sender = ? AND destination = ?) OR \n" +
                     "    (sender = ? AND destination = ?)\n" +
                     "ORDER BY sendingTime;";
-            List<ChatMsg> messages = getQueryRunner()
-                    .query(connection, sql, getDefaultResultSetHandler(), username1, username2, username2, username1)
-                    .stream()
-                    .map(ChatMsgDto::toChatMsg)
-                    .collect(Collectors.toList());
+            List<ChatMsg> messages =
+                    getQueryRunner().query(connection, sql, getDefaultResultSetHandler(), username1, username2,
+                                           username2, username1)
+                                    .stream()
+                                    .map(ChatMsgDto::toChatMsg)
+                                    .collect(Collectors.toList());
 
             return new MsgHistoryOutMessage(messages);
         });

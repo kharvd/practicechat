@@ -25,18 +25,22 @@ public class Main {
 
     private static void showHelp() {
         System.out.println("Available commands: \n" +
-                "    connect <user>@<host>:<port> <password> - connects <user> to <host>:<port>\n" +
-                "    list [#<room>] - lists users currently connected to the server, or, \n" +
-                "        if room is specified, members of the room\n" +
-                "    rooms - lists all available rooms\n" +
-                "    send <username> \"<message>\" - sends <message> to <username>\n" +
-                "    history <username> - lists message history with user <username>\n" +
-                "    join #<room> - joins the room\n" +
-                "    leave #<room> - leaves the room\n" +
-                "    drop #<room> - drops the room\n" +
-                "    disconnect - disconnects from the server\n" +
-                "    help - show this help message\n" +
-                "    exit - exit the application");
+                                   "    connect <user>@<host>:<port> <password> - connects <user>" +
+                                   " to <host>:<port>\n" +
+                                   "    list [#<room>] - lists users currently connected to the " +
+                                   "server, or, \n" +
+                                   "        if room is specified, members of the room\n" +
+                                   "    rooms - lists all available rooms\n" +
+                                   "    send <username> \"<message>\" - sends <message> to " +
+                                   "<username>\n" +
+                                   "    history <username> - lists message history with user " +
+                                   "<username>\n" +
+                                   "    join #<room> - joins the room\n" +
+                                   "    leave #<room> - leaves the room\n" +
+                                   "    drop #<room> - drops the room\n" +
+                                   "    disconnect - disconnects from the server\n" +
+                                   "    help - show this help message\n" +
+                                   "    exit - exit the application");
     }
 
     private static boolean checkConnection() {
@@ -179,6 +183,7 @@ public class Main {
      * Listens to messages from the server
      */
     private static class MainServerMessageListener implements ServerMessageListener {
+
         @Override
         public void onConnectionResult(boolean success, boolean userExists) {
             if (success && userExists) {
@@ -212,12 +217,10 @@ public class Main {
         }
 
         @Override
-        public void onNewMessage(String sender, Optional<String> room, String message, boolean userOnline, long timestamp) {
-            System.out.format("[%tT] %s%s: %s%n",
-                    timestamp,
-                    sender,
-                    room.map(s -> String.format(" (%s)", s)).orElseGet(() -> ""),
-                    message);
+        public void onNewMessage(String sender, Optional<String> room, String message, boolean userOnline,
+                                 long timestamp) {
+            System.out.format("[%tT] %s%s: %s%n", timestamp, sender,
+                              room.map(s -> String.format(" (%s)", s)).orElseGet(() -> ""), message);
         }
 
         @Override
@@ -226,7 +229,8 @@ public class Main {
                 System.out.println("History is empty");
             } else {
                 for (ChatMsg message : messages) {
-                    onNewMessage(message.getSender(), Optional.empty(), message.getMessage(), false, message.getTimestamp());
+                    onNewMessage(message.getSender(), Optional.empty(), message.getMessage(), false,
+                                 message.getTimestamp());
                 }
             }
         }

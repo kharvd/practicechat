@@ -20,8 +20,7 @@ public class UserDao extends Dao<UserDto> {
     public CompletableFuture<Void> createUser(String name, String hash, String salt) {
         return supplyAsync(connection -> {
             String insert = "INSERT INTO users(name, hash, salt) VALUES (?, ?, ?);";
-            getQueryRunner().insert(connection, insert, getDefaultResultSetHandler(),
-                    name, hash, salt);
+            getQueryRunner().insert(connection, insert, getDefaultResultSetHandler(), name, hash, salt);
 
             return null;
         });

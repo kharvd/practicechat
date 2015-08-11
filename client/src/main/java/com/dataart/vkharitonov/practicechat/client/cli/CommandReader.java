@@ -15,13 +15,16 @@ public class CommandReader {
             "(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*";
 
     private static final String CONNECT_SYNTAX_STRING = "Syntax: connect <username>@<host>:<port> <password>";
-    private static final Pattern CONNECT_PATTERN = Pattern.compile("connect\\s+(?<username>" + USERNAME_PATTERN + ")@(?<host>" + HOST_PATTERN + "):(?<port>\\d+)\\s+(?<password>\\S+)");
+    private static final Pattern CONNECT_PATTERN =
+            Pattern.compile("connect\\s+(?<username>" + USERNAME_PATTERN + ")@(?<host>" + HOST_PATTERN +
+                                    "):(?<port>\\d+)\\s+(?<password>\\S+)");
 
     private static final String LIST_SYNTAX_STRING = "Syntax: list [#<room>]";
     private static final Pattern LIST_PATTERN = Pattern.compile("list(\\s+(?<roomName>#?" + USERNAME_PATTERN + "))?");
 
     private static final String SEND_SYNTAX_STRING = "Syntax: send <username> \"<message>\"";
-    private static final Pattern SEND_PATTERN = Pattern.compile("send\\s+(?<name>#?" + USERNAME_PATTERN + ")\\s+\"(?<message>.*)\"");
+    private static final Pattern SEND_PATTERN =
+            Pattern.compile("send\\s+(?<name>#?" + USERNAME_PATTERN + ")\\s+\"(?<message>.*)\"");
 
     private static final String HISTORY_SYNTAX_STRING = "Syntax: history <username>";
     private static final Pattern HISTORY_PATTERN = Pattern.compile("history\\s+(?<name>#?" + USERNAME_PATTERN + ")");
@@ -177,9 +180,7 @@ public class CommandReader {
             throw new IllegalArgumentException(CONNECT_SYNTAX_STRING);
         }
 
-        handler.onConnect(matcher.group("username"),
-                matcher.group("password"),
-                matcher.group("host"),
-                Integer.parseInt(matcher.group("port")));
+        handler.onConnect(matcher.group("username"), matcher.group("password"), matcher.group("host"),
+                          Integer.parseInt(matcher.group("port")));
     }
 }

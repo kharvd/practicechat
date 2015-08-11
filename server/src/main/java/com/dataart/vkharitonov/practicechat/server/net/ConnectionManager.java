@@ -35,7 +35,8 @@ public final class ConnectionManager {
     /**
      * Starts listening to incoming client connections.
      *
-     * @param port               the port number
+     * @param port the port number
+     *
      * @throws IOException thrown if couldn't create server socket
      */
     public void start(int port, InteractorManager connectionListener) throws IOException {
@@ -60,6 +61,7 @@ public final class ConnectionManager {
     }
 
     private class WorkerThread extends Thread {
+
         @Override
         public void run() {
             while (!isInterrupted()) {
@@ -87,8 +89,7 @@ public final class ConnectionManager {
                     throw new JsonSyntaxException("First message should be `connect`");
                 }
             } catch (IOException | JsonSyntaxException e) {
-                log.info("{}: {}", client.getInetAddress()
-                                         .toString(), e.getMessage());
+                log.info("{}: {}", client.getInetAddress().toString(), e.getMessage());
                 Util.closeQuietly(client);
             }
         }
@@ -99,5 +100,4 @@ public final class ConnectionManager {
             return JsonUtils.GSON.fromJson(reader, Message.class);
         }
     }
-
 }

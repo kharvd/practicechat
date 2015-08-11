@@ -34,7 +34,8 @@ public class Main {
             return;
         }
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8))
+        ) {
             String line;
             do {
                 line = reader.readLine();
@@ -48,13 +49,13 @@ public class Main {
 
     private static void showUsageAndExit() {
         System.out.println("usage: server.jar <properties_file>\n" +
-                "\n" +
-                "Required properties:\n" +
-                "    server.port = \n" +
-                "    db.name = \n" +
-                "    db.serverName = \n" +
-                "    db.username = \n" +
-                "    db.password = ");
+                                   "\n" +
+                                   "Required properties:\n" +
+                                   "    server.port = \n" +
+                                   "    db.name = \n" +
+                                   "    db.serverName = \n" +
+                                   "    db.username = \n" +
+                                   "    db.password = ");
         System.exit(1);
     }
 
@@ -73,5 +74,4 @@ public class Main {
             return null;
         }
     }
-
 }

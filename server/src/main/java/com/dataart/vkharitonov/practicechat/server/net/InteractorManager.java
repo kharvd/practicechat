@@ -46,8 +46,8 @@ public final class InteractorManager {
     }
 
     /**
-     * Sends message to {@code destination} from {@code sender} with text {@code message} and {@code timestamp}.
-     * Adds the message to message history.
+     * Sends message to {@code destination} from {@code sender} with text {@code message} and {@code timestamp}. Adds
+     * the message to message history.
      * <p>
      * If {@code destination} starts with '#' symbol, the message is sent to a room.
      *
@@ -57,11 +57,11 @@ public final class InteractorManager {
         if (destination.startsWith("#")) {
             return getRoomMsgDao().addMsg(new RoomMsgDto(sender, destination, message, timestamp))
                                   .thenComposeAsync(aVoid -> getRoomDao().getUsersForRoom(destination))
-                                  .thenAccept(users -> {
-                                      users.stream()
-                                           .filter(u -> !Objects.equals(u, sender))
-                                           .forEach(user -> sendMessageFromRoom(destination, sender, user, message, timestamp));
-                                  });
+                                  .thenAccept(users -> users.stream()
+                                                            .filter(u -> !Objects.equals(u, sender))
+                                                            .forEach(user -> sendMessageFromRoom(destination, sender,
+                                                                                                 user, message,
+                                                                                                 timestamp)));
         } else {
             return getMsgDao().addMsg(new ChatMsgDto(sender, destination, message, timestamp, false))
                               .thenComposeAsync(aVoid -> sendMessageToClient(sender, destination, message, timestamp));
@@ -72,13 +72,12 @@ public final class InteractorManager {
      * Returns user list for room if {@code roomName} contains a name, and a list of all online users otherwise
      *
      * @param roomName optional room name
+     *
      * @return {@link CompletableFuture} that completes with the {@link UserListOutMessage}
      */
     public CompletableFuture<UserListOutMessage> listUsers(Optional<String> roomName) {
         CompletableFuture<List<String>> usernamesFuture;
-        usernamesFuture = roomName.isPresent()
-                ? getRoomDao().getUsersForRoom(roomName.get())
-                : clients.usersList();
+        usernamesFuture = roomName.isPresent() ? getRoomDao().getUsersForRoom(roomName.get()) : clients.usersList();
 
         return usernamesFuture.thenApplyAsync(this::wrapListUsersResult);
     }
@@ -105,8 +104,8 @@ public final class InteractorManager {
     }
 
     /**
-     * Joins user {@code user} to room {@code roomName} if it exists.
-     * Otherwise creates such room and makes the {@code user} its administrator.
+     * Joins user {@code user} to room {@code roomName} if it exists. Otherwise creates such room and makes the {@code
+     * user} its administrator.
      *
      * @return {@link CompletableFuture} that completes with the {@link RoomJoinedOutMessage}
      */
@@ -147,13 +146,13 @@ public final class InteractorManager {
                     throw new UserConnectException(true, "Invalid password");
                 }
             } else {
-                return createUser(username, password).thenComposeAsync(aVoid ->
-                        addInteractor(username, client, false));
+                return createUser(username, password).thenComposeAsync(aVoid -> addInteractor(username, client, false));
             }
         }).handleAsync((connectionResult, e) -> {
             if (e == null) {
                 ClientInteractor clientInteractor = connectionResult.getClientInteractor();
-                clientInteractor.sendConnectMessage(new ConnectionResultOutMessage(true, connectionResult.isUserExists()));
+                clientInteractor.sendConnectMessage(
+                        new ConnectionResultOutMessage(true, connectionResult.isUserExists()));
                 log.info("User {} has connected", username);
                 sendUndeliveredMsgs(username);
             } else if (e.getCause() instanceof UserConnectException) {
@@ -172,14 +171,15 @@ public final class InteractorManager {
      * Shuts down this manager, disconnecting all users
      */
     public CompletableFuture<Void> shutdown() {
-        return clients.removeAllAndShutdown().thenAcceptAsync(clientInteractors ->
-                clientInteractors.forEach(ClientInteractor::shutdown));
+        return clients.removeAllAndShutdown()
+                      .thenAcceptAsync(clientInteractors -> clientInteractors.forEach(ClientInteractor::shutdown));
     }
 
     /**
      * Creates new user interactor
      *
      * @param userExists false, if the user was just created
+     *
      * @return {@link CompletableFuture} with {@link ConnectionResult} that contains the {@link ClientInteractor} and
      * boolean {@code userExists}
      */
@@ -225,7 +225,8 @@ public final class InteractorManager {
     /**
      * Sends new text message to the client
      */
-    private CompletableFuture<Void> sendMessageToClient(String sender, String destination, String message, long timestamp) {
+    private CompletableFuture<Void> sendMessageToClient(String sender, String destination, String message,
+                                                        long timestamp) {
         ClientInteractor interactor = clients.getInteractor(destination);
         if (interactor != null) {
             return interactor.sendNewMessage(new NewMsgOutMessage(sender, message, true, timestamp))
@@ -244,7 +245,8 @@ public final class InteractorManager {
         }
     }
 
-    private CompletableFuture<Void> sendMessageFromRoom(String room, String sender, String destination, String message, long timestamp) {
+    private CompletableFuture<Void> sendMessageFromRoom(String room, String sender, String destination, String message,
+                                                        long timestamp) {
         ClientInteractor interactor = clients.getInteractor(destination);
         if (interactor != null) {
             return interactor.sendNewMessage(new NewMsgOutMessage(room, sender, message, timestamp));
@@ -271,10 +273,9 @@ public final class InteractorManager {
      */
     private CompletableFuture<Void> sendUndeliveredMsgs(String username) {
         return getMsgDao().getUndeliveredMsgsForUser(username)
-                          .thenAcceptAsync(undeliveredMsgs ->
-                                  undeliveredMsgs.forEach(msg ->
-                                          sendMessageToClient(msg.getSender(), username, msg.getMessage(), msg.getSendingTime()
-                                                                                                              .getTime())));
+                          .thenAcceptAsync(undeliveredMsgs -> undeliveredMsgs.forEach(
+                                  msg -> sendMessageToClient(msg.getSender(), username, msg.getMessage(),
+                                                             msg.getSendingTime().getTime())));
     }
 
     /**
@@ -284,8 +285,11 @@ public final class InteractorManager {
      */
     private CompletableFuture<Void> sendConnectionFailure(Socket clientSocket, boolean userExists) {
         return CompletableFuture.runAsync(() -> {
-            String message = JsonUtils.GSON.toJson(new Message(Message.MessageType.CONNECTION_RESULT, new ConnectionResultOutMessage(false, userExists)));
-            try (PrintWriter out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8), true)) {
+            String message = JsonUtils.GSON.toJson(new Message(Message.MessageType.CONNECTION_RESULT,
+                                                               new ConnectionResultOutMessage(false, userExists)));
+            try (PrintWriter out = new PrintWriter(
+                    new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8), true)
+            ) {
                 clientSocket.setSoTimeout(CONNECTION_FAILURE_TIMEOUT);
                 out.println(message);
             } catch (IOException e) {
@@ -323,6 +327,7 @@ public final class InteractorManager {
      * Result of connecting a new user
      */
     private static class ConnectionResult {
+
         private ClientInteractor clientInteractor;
         private boolean userExists;
 

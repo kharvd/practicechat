@@ -42,9 +42,11 @@ public final class ClientInteractor {
      * @param username          username associated with the client
      * @param clientSocket      client's socket
      * @param interactorManager manager
+     *
      * @throws IOException thrown if couldn't get output stream from a socket
      */
-    public ClientInteractor(String username, Socket clientSocket, InteractorManager interactorManager) throws IOException {
+    public ClientInteractor(String username, Socket clientSocket, InteractorManager interactorManager)
+            throws IOException {
         super();
         this.username = username;
         this.clientSocket = clientSocket;
@@ -148,8 +150,8 @@ public final class ClientInteractor {
         }
 
         interactorManager.listUsers(roomName)
-                         .thenAcceptAsync(userListOutMessage ->
-                                 sendMessageToClient(Message.MessageType.USER_LIST, userListOutMessage));
+                         .thenAcceptAsync(userListOutMessage -> sendMessageToClient(Message.MessageType.USER_LIST,
+                                                                                    userListOutMessage));
     }
 
     private void handleSendMessageRequest(Message message) {
@@ -172,6 +174,7 @@ public final class ClientInteractor {
     }
 
     private class MessageConsumer implements MessageProducer.Consumer {
+
         @Override
         public void onNext(Message message) {
             log.info("Received message from {}: {}", username, message);

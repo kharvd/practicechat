@@ -1,6 +1,7 @@
 package com.dataart.vkharitonov.practicechat.server.db.dto;
 
 public class RoomDto {
+
     private String name;
     private String admin;
 

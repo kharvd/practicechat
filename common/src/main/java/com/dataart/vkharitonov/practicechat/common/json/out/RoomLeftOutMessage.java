@@ -1,6 +1,7 @@
 package com.dataart.vkharitonov.practicechat.common.json.out;
 
 public class RoomLeftOutMessage {
+
     private boolean success;
     private String roomName;
 

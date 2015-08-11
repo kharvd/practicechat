@@ -17,10 +17,9 @@ public final class MessageProducer {
     private ReadThread readThread;
 
     /**
-     * Starts reading messages from {@code inputStream} and notifying the {@code consumer}.
-     * The consumer takes ownership of the InputStream and closes it after the reading is done.
-     * <em>All methods of the consumer are called on the same thread that reads the stream,
-     * so you shouldn't do any blocking operations there.</em>
+     * Starts reading messages from {@code inputStream} and notifying the {@code consumer}. The consumer takes ownership
+     * of the InputStream and closes it after the reading is done. <em>All methods of the consumer are called on the
+     * same thread that reads the stream, so you shouldn't do any blocking operations there.</em>
      *
      * @param inputStream an input stream to read from
      * @param consumer    a consumer
@@ -35,14 +34,15 @@ public final class MessageProducer {
     }
 
     /**
-     * Stops reading from the stream. Consumer will be notified by onCompleted method.
-     * The InputStream which was supplied to {@link #start(InputStream, Consumer)} method will be closed
+     * Stops reading from the stream. Consumer will be notified by onCompleted method. The InputStream which was
+     * supplied to {@link #start(InputStream, Consumer)} method will be closed
      */
     public void stop() {
         readThread.interrupt();
     }
 
     public interface Consumer {
+
         /**
          * Called when a new message was received
          *
@@ -51,16 +51,16 @@ public final class MessageProducer {
         void onNext(Message message);
 
         /**
-         * Called when an exception was thrown during the reading. After this point, no more calls
-         * to {@link #onNext} or {@link #onCompleted} will be made
+         * Called when an exception was thrown during the reading. After this point, no more calls to {@link #onNext} or
+         * {@link #onCompleted} will be made
          *
          * @param e thrown exception
          */
         void onError(Throwable e);
 
         /**
-         * Called when the end of the stream was reached. After this point, no more calls
-         * to {@link #onNext} or {@link #onError} will be made
+         * Called when the end of the stream was reached. After this point, no more calls to {@link #onNext} or {@link
+         * #onError} will be made
          */
         void onCompleted();
     }
@@ -78,7 +78,8 @@ public final class MessageProducer {
         @Override
         public void run() {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-                 JsonReader reader = new JsonReader(in)) {
+                 JsonReader reader = new JsonReader(in)
+            ) {
                 reader.setLenient(true);
                 while (!isInterrupted() && reader.peek() != JsonToken.END_DOCUMENT) {
                     Message message = JsonUtils.GSON.fromJson(reader, Message.class);
